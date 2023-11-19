@@ -102,39 +102,38 @@ class Character(Scene):
         self.state = "idle"
         self.direction = "Right"
         self.elapsed_loop_duration = 0
+        self.is_gun_triggered = False
 
         # texture dimentions (40, 70)
         self.texture = {
             "Right": {
-                "aim":          {0: f"Assets/Animation/Char/Attack/Aim/Right/0.png"},
                 "idle":         {i: f"Assets/Animation/Char/Idle/Right/{i}.png" for i in range(6)},
                 "run":          {i: f"Assets/Animation/Char/Run/Right/{i}.png" for i in range(8)},
-                "fire":         {i: f"Assets/Animation/Char/Attack/Fire/Right/{i}.png" for i in range(12)}
+                "fire":         {i: f"Assets/Animation/Char/Attack/Fire/Right/{i}.png" for i in range(12)},
+                "aim":          {0: f"Assets/Animation/Char/Attack/Fire/Right/0.png"}
             },
 
             "Left": {
-                "aim":          {0: f"Assets/Animation/Char/Attack/Aim/Left/0.png"},
                 "idle":         {i: f"Assets/Animation/Char/Idle/Left/{i}.png" for i in range(6)},
                 "run":          {i: f"Assets/Animation/Char/Run/Left/{i}.png" for i in range(8)},
-                "fire":         {i: f"Assets/Animation/Char/Attack/Fire/Left/{i}.png" for i in range(12)}
+                "fire":         {i: f"Assets/Animation/Char/Attack/Fire/Left/{i}.png" for i in range(12)},
+                "aim":          {0: f"Assets/Animation/Char/Attack/Fire/Left/0.png"}
             }
         }
 
         # DELAY BETWEEN EACH TEXTURE FRAME
-        self.animation_duration = {
-            "aim":          0.14,
-            "idle":         0.1,
+        self.animation_delay = {
+            "aim":          0.44,
+            "idle":         0.05,
             "run":          0.08,
-            "fire":         0.08
+            "fire":         0.04
         }
-
-        # DETERMINE AIMING ANIMATION DELAY [IN FRAMES]
-        self.expired_fire_state = lambda: self.aim_timer >= 60 * 1.1 * Time.dt
 
     def update_texture(self, loop=True) -> bool:
 
         # IF PASSED THE ANIMATION DURATION
-        if self.elapsed_frames >= self.animation_duration.get(self.state):
+        if self.elapsed_frames >= self.animation_delay.get(self.state):
+
             self.elapsed_frames = 0
 
             self.entity.texture = self.texture.get(
@@ -155,15 +154,13 @@ class Character(Scene):
                     ).get(self.state)
                 )
 
-                # BULLET SPAWN AFTER FEW FRAMES OF THE ANIMATION
-                if self.current_frame == 2:
-                    self.bullet.spawn()
-
-                elif self.current_frame >= total_frames:
+                if self.current_frame >= total_frames:
 
                     match self.state:
                         case "fire":
                             self.state = "aim"
+                            self.current_frame = 0
+                            self.elapsed_loop_duration = 0
 
                 self.current_frame += 1
 
@@ -197,33 +194,30 @@ class Character(Scene):
 
             case "fire":
 
-                # RESET AIMING TIMER
-                self.aim_timer = 0
-
-                if self.expired_fire_state():
-
-                    # BACK TO AIMING
-                    self.state = "aim"
-                    self.current_frame = 0
-                    self.elapsed_loop_duration = 0
-
-                else:
+                if self.bullet.total > 0:
 
                     self.update_texture(loop=False)
 
+                    # SPAWN ONE BULLET ON TRIGGER
+                    if self.is_gun_triggered:
+                        self.bullet.spawn()
+                        self.is_gun_triggered = False
+
+                else:
+                    self.aim_timer = 0
+                    self.state = "aim"
+
             case "aim":
 
-                self.aim_timer += Time.dt
+                self.entity.texture = self.texture.get(self.direction).get(
+                    "fire"
+                ).get(0)
 
-                if self.expired_fire_state():
+                self.aim_timer += Time.dt
+                if self.aim_timer >= 60 * 1.4 * Time.dt:
 
                     # BACK TO IDLE
                     self.state = "idle"
-
-                else:
-                    self.entity.texture = self.texture.get(self.direction).get(
-                        "aim"
-                    ).get(0)
 
 
 class Enemy(Scene):

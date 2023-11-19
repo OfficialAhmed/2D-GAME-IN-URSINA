@@ -70,6 +70,7 @@ def input(key):
 
         case "space":
             character.state = "fire"
+            character.is_gun_triggered = True
 
 
 app.run()
