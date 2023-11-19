@@ -31,7 +31,8 @@ ground = Sprite(
 character = Character(
     Entity(
         model="quad",
-        position=(-6, -2),
+        scale=(0.87, 1.25),
+        position=(-6, -1.85),
         always_on_top=True,
     ),
     sky,
@@ -58,14 +59,14 @@ def input(key):
     match key:
 
         case Keys.right_arrow:
-            character.state = "move"
+            character.state = "run"
             character.direction = "Right"
 
         case Keys.right_arrow_up:
             character.state = "idle"
 
         case Keys.left_arrow:
-            character.state = "move"
+            character.state = "run"
             character.direction = "Left"
 
         case Keys.left_arrow_up:

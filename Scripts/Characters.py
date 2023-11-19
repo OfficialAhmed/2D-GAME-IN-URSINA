@@ -103,15 +103,15 @@ class Character(Scene):
         self.texture = {
             "Right": {
                 "aim":          {0: f"Assets/Animation/Char/Attack/Aim/Right/0.png"},
-                "idle":         {i: f"Assets/Animation/Char/Idle/Right/{i}.png" for i in range(12)},
-                "move":         {i: f"Assets/Animation/Char/Move/Right/{i}.png" for i in range(10)},
+                "idle":         {i: f"Assets/Animation/Char/Idle/Right/{i}.png" for i in range(6)},
+                "run":          {i: f"Assets/Animation/Char/Run/Right/{i}.png" for i in range(8)},
                 "fire":         {0: f"Assets/Animation/Char/Attack/Fire/Right/0.png"}
             },
 
             "Left": {
                 "aim":          {0: f"Assets/Animation/Char/Attack/Aim/Left/0.png"},
-                "idle":         {i: f"Assets/Animation/Char/Idle/Left/{i}.png" for i in range(12)},
-                "move":         {i: f"Assets/Animation/Char/Move/Left/{i}.png" for i in range(10)},
+                "idle":         {i: f"Assets/Animation/Char/Idle/Left/{i}.png" for i in range(6)},
+                "run":          {i: f"Assets/Animation/Char/Run/Left/{i}.png" for i in range(8)},
                 "fire":         {0: f"Assets/Animation/Char/Attack/Fire/Left/0.png"}
             }
         }
@@ -120,7 +120,7 @@ class Character(Scene):
         self.animation_duration = {
             "aim":          0.14,
             "idle":         0.1,
-            "move":         0.08,
+            "run":         0.08,
             "fire":         0.1
         }
 
@@ -165,7 +165,7 @@ class Character(Scene):
             case "idle":
                 self.update_texture()
 
-            case "move":
+            case "run":
 
                 # INCREASE CHAR X UNTIL ORIGIN
                 if self.direction == "Right":

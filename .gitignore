@@ -1,2 +1,4 @@
 venv
 Backup
+
+__pycache__
