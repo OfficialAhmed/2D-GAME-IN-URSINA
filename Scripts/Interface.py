@@ -3,7 +3,7 @@ from ursina import color as Color
 
 
 class Ui:
-
+    
     __ammo:    Text = None
     __health:  Text = None
 
@@ -13,7 +13,7 @@ class Ui:
             f"Ammo: {total}",
             font="Assets/Font/CUPHEAD.ttf",
             origin=(0, 0),
-            position=(-0.8, 0.4),
+            position=(-0.8, 0.35),
             color=Color.black,
             always_on_top=True
         )
@@ -24,7 +24,7 @@ class Ui:
             f"Life: {total}",
             font="Assets/Font/CUPHEAD.ttf",
             origin=(0, 0),
-            position=(-0.8, 0.2),
+            position=(-0.8, 0.4),
             color=Color.black,
             always_on_top=True
         )

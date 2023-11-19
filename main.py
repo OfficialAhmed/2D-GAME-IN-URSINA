@@ -31,8 +31,8 @@ ground = Sprite(
 character = Character(
     Entity(
         model="quad",
-        scale=(0.87, 1.25),
-        position=(-6, -1.85),
+        scale=(4.3, 2),
+        position=(-6, -1.55),
         always_on_top=True,
     ),
     sky,
@@ -43,12 +43,8 @@ character = Character(
 ###############################################
 #       ENGINE AUTO INVOKED METHODS
 ###############################################
-is_first_time = True
-
 
 def update():
-    global is_first_time
-
     character.elapsed_frames += Time.dt
     character.elapsed_loop_duration += Time.dt
     character.animate()
