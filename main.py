@@ -1,9 +1,9 @@
+import time
 from ursina import Ursina, Sprite, Entity, Keys
 from ursina import time as Time
 
 from Scripts.Characters import Character
 from Scripts.World import Scene
-
 
 app = Ursina()
 scene = Scene()
@@ -31,8 +31,8 @@ ground = Sprite(
 character = Character(
     Entity(
         model="quad",
-        scale=(4.3, 2),
-        position=(-6, -1.55),
+        scale=(3.8, 1.8),
+        position=(-6, -1.6),
         always_on_top=True,
     ),
     sky,
@@ -46,7 +46,9 @@ character = Character(
 
 def update():
     character.elapsed_frames += Time.dt
+    character.last_fire_frame += Time.dt
     character.elapsed_loop_duration += Time.dt
+
     character.animate()
 
 
@@ -69,8 +71,12 @@ def input(key):
             character.state = "idle"
 
         case "space":
-            character.state = "fire"
-            character.is_gun_triggered = True
+
+            # COOLDOWN FIRING
+            if (character.last_fire_frame) >= character.fire_cooldown:
+                character.state = "fire"
+                character.is_gun_triggered = True
+                character.last_fire_frame = 0
 
 
 app.run()
