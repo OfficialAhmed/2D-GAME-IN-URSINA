@@ -1,55 +1,38 @@
-from ursina import Ursina, Sprite, Entity, Keys
 from ursina import time as Time
+from ursina import destroy as Destroy
+from ursina import Ursina, Entity, Keys, Sprite
 
-from Scripts.Characters import Character
 from Scripts.World import Scene
+from Scripts.Characters import Character
 
 app = Ursina()
-scene = Scene()
 
 
-#########################
-#       STAGE INIT
-#########################
-stage = scene.stage_1()
-sky = Sprite(
-    stage.get("bg"),
-    scale=(0, 4),
-    position=(0, 0.7, 0)
-)
-
-ground = Sprite(
-    stage.get("fg"),
-    scale=(0, 2.1),
-    position=(3.3, -1.5, 0),
-    always_on_top=True
-)
-
-#########################
-#       ENTITES INIT
-#########################
+scene = Scene(Sprite=Sprite)
 character = Character(
     Entity(
         model="quad",
         scale=(3.8, 1.8),
-        position=(-6, -1.6),
+        position=(-6, -2.5),
         always_on_top=True,
-    ),
-    sky,
-    ground
+    )
 )
-
 
 ###############################################
 #       ENGINE AUTO INVOKED METHODS
 ###############################################
 
+
 def update():
+
     character.elapsed_frames += Time.dt
     character.last_fire_frame += Time.dt
     character.elapsed_loop_duration += Time.dt
 
-    character.animate()
+    character.update()
+
+    if character.position_on_origin():
+        scene.update()
 
 
 def input(key):

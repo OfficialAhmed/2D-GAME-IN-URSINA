@@ -1,12 +1,11 @@
 
-from ursina import Entity, Sprite
+from ursina import Entity
 from ursina import time as Time
 
 from ursina import destroy as Destroy
 
-from .World import Scene
+from .World import Fps
 from .Interface import Ui
-
 
 class Gun:
 
@@ -27,7 +26,8 @@ class Gun:
         self.total_ammo_mag = self.SHOTGUN_CAPACITY
         self.direction = "Right"
 
-        self.get_gun_pos = lambda: (self.entity.x, -1.5)
+        self.get_gun_pos = lambda: (
+            self.entity.x, self.entity.y/4 - self.entity.scale_y_getter())
         self.ui.render_ammo(self.total_ammo)
         self.ui.render_mag_capacity(self.total_ammo_mag)
 
@@ -99,20 +99,18 @@ class Gun:
             # TODO: CHECK COLLISION WITH ENEMIES
 
 
-class Character(Scene):
+class Character(Fps):
 
     # _____   CONSTANTS   ____________
     SPEED = 1.7
 
-    def __init__(self, entity: Entity, sky: Sprite, ground: Sprite) -> None:
+    def __init__(self, entity: Entity) -> None:
         super().__init__()
 
         self.ui = Ui()
         self.ui.render_health(100)
 
         # ENGINE ENTITY OBJECT
-        self.sky:    Sprite = sky
-        self.ground: Sprite = ground
         self.entity: Entity = entity
         self.gun:       Gun = Gun(self.entity)
 
@@ -209,7 +207,7 @@ class Character(Scene):
             # LOOP ANIMATION FRAMES
             self.current_frame = (self.current_frame+1) % total_frames
 
-    def animate(self):
+    def update(self):
 
         self.gun.direction = self.direction
         self.gun.animate_bullet()
@@ -236,11 +234,6 @@ class Character(Scene):
 
                 elif self.entity.x <= 0:
                     self.entity.x += speed
-
-                else:
-                    # UPDATE GROUND / SKY POSITION
-                    self.sky.x -= speed/2
-                    self.ground.x -= speed
 
                 self.update_texture_loop()
 
@@ -288,3 +281,8 @@ class Character(Scene):
                 # PAUSE ANIMATION FOR SOME TIME THEN BACK TO IDLE
                 if self.aiming_timer >= 60 * 1.1 * Time.dt:
                     self.state = "idle"
+
+    def position_on_origin(self):
+        
+        # WHILE RUNNING AND REACHED MIDDLE SCREEN
+        return True if self.entity.x > 0 and self.state == "run" else False

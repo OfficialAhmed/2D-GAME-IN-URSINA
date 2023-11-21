@@ -15,7 +15,7 @@ class Ui:
             font="Assets/Font/CUPHEAD.ttf",
             origin=(0, 0),
             position=(x, y),
-            color=Color.black,
+            color=Color.white,
             always_on_top=True
         )
 
