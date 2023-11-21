@@ -1,12 +1,12 @@
 from ursina import time as Time
-from ursina import destroy as Destroy
-from ursina import Ursina, Entity, Keys, Sprite
+from ursina import Ursina, Entity, Keys, Sprite, Audio
 
 from Scripts.World import Scene
 from Scripts.Characters import Character
 
 app = Ursina()
 
+soundtrack = Audio("Assets/Sound/stage1.ogg", loop=True).play()
 
 scene = Scene(Sprite=Sprite)
 character = Character(
