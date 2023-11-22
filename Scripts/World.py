@@ -60,14 +60,14 @@ class Scene:
         self.trees = Sprite(
             "Assets/Animation/Stage/trees.png",
             scale=2,
-            position=(25, -1.7, 0),
+            position=(25, -1.3, 0),
             always_on_top=True
         )
 
         self.ground = Sprite(
             "Assets/Animation/Stage/ground.png",
-            scale=2.1,
-            position=(3.3, -2.5, 0),
+            scale=3,
+            position=(79.2, -2, 0),
             always_on_top=True
         )
 
@@ -94,7 +94,8 @@ class Scene:
 
         self.trees.x -= speed / self.animation_delay.get("trees")
         self.mountains.x -= speed / self.animation_delay.get("mountains")
-        self.far_mountains.x -= speed / self.animation_delay.get("far_mountains")
+        self.far_mountains.x -= speed / \
+            self.animation_delay.get("far_mountains")
 
         # UPDATE POSITIONS BASED ON THE DIRECTION
         # MOVE BACKGROUND TOWARDS THE LEFT
@@ -110,4 +111,4 @@ class Scene:
             self.clouds.x += speed / self.animation_delay.get("clouds")
 
         # UPDATE GROUND - INDEPENDENTLY
-        self.ground.x -= speed
+        self.ground.x -= speed/1.2

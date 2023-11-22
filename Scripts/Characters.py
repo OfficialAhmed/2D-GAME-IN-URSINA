@@ -1,11 +1,11 @@
-
-from ursina import Entity
+from ursina import Entity, Audio
 from ursina import time as Time
 
 from ursina import destroy as Destroy
 
 from .World import Fps
 from .Interface import Ui
+
 
 class Gun:
 
@@ -22,12 +22,19 @@ class Gun:
         self.entity = entity
 
         self.bullets = []
-        self.total_ammo = 4
+        self.total_ammo = 20
         self.total_ammo_mag = self.SHOTGUN_CAPACITY
         self.direction = "Right"
 
         self.get_gun_pos = lambda: (
-            self.entity.x, self.entity.y/4 - self.entity.scale_y_getter())
+            self.entity.x, -2.25
+        )
+
+        self.shoot_sound = Audio("Assets/Sound/Gun/Shotgun/shoot.mp3", False)
+        self.empty_sound = Audio("Assets/Sound/Gun/Shotgun/empty.mp3", False)
+        self.reload_sound = Audio("Assets/Sound/Gun/Shotgun/reload.mp3", False)
+        self.loaded_sound = Audio("Assets/Sound/Gun/Shotgun/loaded.mp3", False)
+
         self.ui.render_ammo(self.total_ammo)
         self.ui.render_mag_capacity(self.total_ammo_mag)
 
@@ -46,29 +53,27 @@ class Gun:
 
     def spawn_bullet(self):
 
-        if self.total_ammo_mag > 0:
+        # TRACK THE BULLET DATA TO ANIMATE INDIVIDUALLY
+        self.bullets.append(
+            {
+                "direction":    self.direction,
+                "speed":        self.VELOCITY,
+                "bullet":       Entity(
+                    model="quad",
+                    scale=(0.2, 0.1),
+                    position=(
+                        self.get_gun_pos()[0],
+                        self.get_gun_pos()[1]
+                    ),
+                    always_on_top=True,
+                )
+            }
+        )
 
-            # TRACK THE BULLET DATA TO ANIMATE INDIVIDUALLY
-            self.bullets.append(
-                {
-                    "direction":    self.direction,
-                    "speed":        self.VELOCITY,
-                    "bullet":       Entity(
-                        model="quad",
-                        scale=(0.2, 0.1),
-                        position=(
-                            self.get_gun_pos()[0],
-                            self.get_gun_pos()[1]
-                        ),
-                        always_on_top=True,
-                    )
-                }
-            )
+        self.total_ammo_mag -= 1
 
-            self.total_ammo_mag -= 1
-
-            self.ui.update_mag_capacity(self.total_ammo_mag)
-            self.animate_bullet()
+        self.ui.update_mag_capacity(self.total_ammo_mag)
+        self.animate_bullet()
 
     def animate_bullet(self):
 
@@ -123,7 +128,7 @@ class Character(Fps):
         self.elapsed_loop_duration = 0
 
         self.last_fire_frame = 0
-        self.fire_cooldown = 0.5
+        self.fire_cooldown = 0.3
 
         self.total_textures = {
             "idle":     5,
@@ -250,15 +255,18 @@ class Character(Fps):
                     if self.is_gun_triggered and not self.is_animating:
                         self.update_texture()
                         self.gun.spawn_bullet()
+                        self.gun.shoot_sound.play()
                         self.is_gun_triggered = False
 
                 # MAG IS EMPTY, RELOAD
                 elif self.gun.total_ammo >= self.gun.SHOTGUN_CAPACITY:
                     self.aiming_timer = 0
                     self.state = "reload"
+                    self.gun.reload_sound.play()
 
                 # NO MORE AMMO, KEEP AIMING
                 elif self.gun.total_ammo == 0:
+                    self.gun.empty_sound.play()
                     self.state = "aim"
 
                 self.update_texture()
@@ -270,6 +278,7 @@ class Character(Fps):
                 # RELOAD AMMO ONCE RELOADING-ANIMATION ENDED
                 if self.gun.total_ammo_mag != self.gun.SHOTGUN_CAPACITY:
                     if not self.is_animating:
+                        self.gun.loaded_sound.play()
                         self.gun.reload()
 
             case "aim":
@@ -283,6 +292,6 @@ class Character(Fps):
                     self.state = "idle"
 
     def position_on_origin(self):
-        
+
         # WHILE RUNNING AND REACHED MIDDLE SCREEN
         return True if self.entity.x > 0 and self.state == "run" else False
