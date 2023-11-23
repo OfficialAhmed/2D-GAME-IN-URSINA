@@ -16,9 +16,9 @@ class Gun:
     MAX_RANGE = 7           # BULLET DISTANCE
     SHOTGUN_CAPACITY = 4    # MAGAZINE CAPACITY
 
-    def __init__(self, entity) -> None:
+    def __init__(self, entity, ui) -> None:
 
-        self.ui = Ui()
+        self.ui = ui
         self.entity = entity
 
         self.bullets = []
@@ -109,15 +109,17 @@ class Character(Fps):
     # _____   CONSTANTS   ____________
     SPEED = 1.7
 
-    def __init__(self, entity: Entity) -> None:
+    def __init__(self, entity: Entity, ui: Ui) -> None:
         super().__init__()
 
-        self.ui = Ui()
+        self.ui = ui
+        self.ui.render_money(50)
+        self.ui.render_armor(100)
         self.ui.render_health(100)
 
         # ENGINE ENTITY OBJECT
         self.entity: Entity = entity
-        self.gun:       Gun = Gun(self.entity)
+        self.gun:       Gun = Gun(self.entity, ui)
 
         self.aiming_timer = 0               # TO HOLD DURATION OF THE AIMING FRAME
         self.is_animating = False           # TO DETERMINE WHETHER ANIMATION LOOP ENDED
@@ -295,3 +297,4 @@ class Character(Fps):
 
         # WHILE RUNNING AND REACHED MIDDLE SCREEN
         return True if self.entity.x > 0 and self.state == "run" else False
+    

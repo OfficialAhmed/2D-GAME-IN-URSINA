@@ -4,6 +4,7 @@ from ursina import Ursina, Entity, Keys, Sprite, Audio
 
 from Scripts.World import Scene
 from Scripts.Characters import Character
+from Scripts.Interface import Ui
 
 from random import choice as Randomize
 
@@ -12,6 +13,7 @@ app = Ursina()
 atmosphere = Audio("Assets/Sound/atmosphere.mp3", loop=True)
 atmosphere.volume = 0.9
 
+ui = Ui(Entity=Entity)
 scene = Scene(Sprite=Sprite)
 character = Character(
     Entity(
@@ -19,7 +21,8 @@ character = Character(
         scale=(3.8, 1.8),
         position=(-6, -2.3),
         always_on_top=True,
-    )
+    ),
+    ui
 )
 
 ambient_sound = (
@@ -27,6 +30,8 @@ ambient_sound = (
     Audio(f"Assets/Sound/Zombie/01.mp3", False),
     Audio(f"Assets/Sound/Zombie/02.mp3", False)
 )
+
+
 ###############################################
 #       ENGINE AUTO INVOKED METHODS
 ###############################################
