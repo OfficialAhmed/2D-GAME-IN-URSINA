@@ -1,4 +1,4 @@
-from ursina import Entity, Audio
+from ursina import Entity, Audio, Keys
 from ursina import time as Time
 
 from ursina import destroy as Destroy
@@ -18,7 +18,7 @@ class Gun:
 
     def __init__(self, entity, ui) -> None:
 
-        self.ui = ui
+        self.ui: Ui = ui
         self.entity = entity
 
         self.bullets = []
@@ -167,6 +167,35 @@ class Character(Fps):
             "reload":       0.17,       # RELOADING SPEED
         }
 
+    def controller(self, key):
+
+        match key:
+            case Keys.right_arrow:
+                self.state = "run"
+                self.direction = "Right"
+
+            case Keys.right_arrow_up:
+                self.state = "idle"
+
+            case Keys.left_arrow:
+                self.state = "run"
+                self.direction = "Left"
+
+            case Keys.left_arrow_up:
+                self.state = "idle"
+
+            case "space":
+
+                # COOLDOWN FIRING
+                if (self.last_fire_frame) >= self.fire_cooldown:
+
+                    # CANNOT FIRE WHILE RELOADING
+                    if self.state != "reload":
+
+                        self.state = "fire"
+                        self.last_fire_frame = 0
+                        self.is_gun_triggered = True
+
     def update_texture(self):
 
         # AIMING IS ONE FRAME NOT AN ANIMATION
@@ -297,4 +326,3 @@ class Character(Fps):
 
         # WHILE RUNNING AND REACHED MIDDLE SCREEN
         return True if self.entity.x > 0 and self.state == "run" else False
-    

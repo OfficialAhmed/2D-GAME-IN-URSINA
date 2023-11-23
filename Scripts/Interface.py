@@ -1,5 +1,85 @@
-from ursina import Text, Entity
+from ursina import Text, Entity, Keys
 from ursina import color as Color
+from ursina import destroy as Destroy
+
+
+class PauseMenu:
+
+    def __init__(self) -> None:
+        self.options = (
+            "save",
+            "load",
+            "back"
+        )
+
+        self.option = {
+            "back": self.destroy,
+            "save": self.save,
+            "load": self.load
+        }
+
+        self.is_enabled = False
+        self.unpause_game = False
+        self._current_option = 2
+
+        self.texture = lambda option: f"Assets/Interface/Pause menu/{self.options[option]}.png"
+
+    def controller(self, key):
+        """
+            HANDLES THE MOVEMENT OF THE MENU OPTIONS
+        """
+        match key:
+            case Keys.up_arrow:
+                self.change_option("up")
+
+            case Keys.down_arrow:
+                self.change_option("down")
+
+            case Keys.enter:
+                return self.select_option()
+
+    def render(self):
+
+        self.is_enabled = True
+        self.unpause_game = True
+        self.menu = Entity(
+            model="quad",
+            texture=self.texture(self._current_option),
+            scale=(15, 9),
+            always_on_top=True
+        )
+
+    def destroy(self):
+        self.is_enabled = False
+        Destroy(self.menu)
+
+    def change_option(self, direction):
+        if direction == "up" and self._current_option > 0:
+            self._current_option -= 1
+
+        elif direction == "down" and self._current_option < 2:
+            self._current_option += 1
+
+        self.menu.texture = self.texture(self._current_option)
+
+    def select_option(self):
+
+        selected_option = self.options[self._current_option]
+        self.option.get(selected_option)()      # INVOKE THE METHOD
+
+        if selected_option == "back":
+            return True
+        else:
+            return False
+
+    def save(self):
+        # TODO: SAVE CURRENT GAME STATE
+        self.destroy()
+
+    def load(self):
+        # TODO: LOAD GAME STATE
+        self.destroy()
+
 
 class Ui:
 
@@ -10,12 +90,25 @@ class Ui:
     __gun_capacity:   Text = None
 
     def __init__(self, Entity: Entity) -> None:
+
+        # MENUS
+        self.pause_menu = PauseMenu()
+
         # HUD BACKGROUND UI
         Entity(
             model="quad",
             texture="Assets/Interface/HUD.png",
             scale=(5.5, 2),
             position=(-4.3, 3.1),
+            always_on_top=True
+        )
+
+        # WEAPON ICON
+        Entity(
+            model="quad",
+            texture="Assets/Interface/Icons/Weapons/shotgun.png",
+            scale=(1.75, 1.5),
+            position=(-5.9, 3.25),
             always_on_top=True
         )
 

@@ -31,6 +31,7 @@ ambient_sound = (
     Audio(f"Assets/Sound/Zombie/02.mp3", False)
 )
 
+game_loop = True
 
 ###############################################
 #       ENGINE AUTO INVOKED METHODS
@@ -40,49 +41,52 @@ ambient_sound = (
 def update():
     global ambient_sound
 
-    character.elapsed_frames += Time.dt
-    character.last_fire_frame += Time.dt
-    character.elapsed_loop_duration += Time.dt
+    if game_loop:       # HANDLE GAME LOGIC
 
-    character.update()
+        character.elapsed_frames += Time.dt
+        character.last_fire_frame += Time.dt
+        character.elapsed_loop_duration += Time.dt
 
-    if character.position_on_origin():
-        scene.update()
+        character.update()
 
-    # EVERY 20 UNITS TRAVELED GENERATE RANDOM ZOMBIE SOUND
-    if scene.ground.x % 20 <= 0.1:
-        Randomize(ambient_sound).play()
+        if character.position_on_origin():
+            scene.update()
+
+        # EVERY 20 UNITS TRAVELED GENERATE RANDOM ZOMBIE SOUND
+        if scene.ground.x % 20 <= 0.1:
+            Randomize(ambient_sound).play()
+
+    else:               # HANDLE MENUS UI
+        pass
 
 
 def input(key):
+    global game_loop
 
-    match key:
+    # _____ ENABLE/DISABLED GAME CONTROLLER
+    if key == "p":
 
-        case Keys.right_arrow:
-            character.state = "run"
-            character.direction = "Right"
+        character.state = "idle"
+        
+        if game_loop:   # PAUSE GAME
+            game_loop = False
+            ui.pause_menu.render()
 
-        case Keys.right_arrow_up:
-            character.state = "idle"
+        else:           # UNPAUSE GAME
+            game_loop = True
+            ui.pause_menu.destroy()
 
-        case Keys.left_arrow:
-            character.state = "run"
-            character.direction = "Left"
+    # _____ CHANGE CONTROLLER
+    if game_loop:       # GAME CONTROLLER ENABLED
 
-        case Keys.left_arrow_up:
-            character.state = "idle"
+        # HANDLE PLAYER CONTROLLER
+        character.controller(key)
 
-        case "space":
+    else:               # GAME CONTROLLER DISABLED
 
-            # COOLDOWN FIRING
-            if (character.last_fire_frame) >= character.fire_cooldown:
-
-                # CANNOT FIRE WHILE RELOADING
-                if character.state != "reload":
-
-                    character.state = "fire"
-                    character.last_fire_frame = 0
-                    character.is_gun_triggered = True
+        # HANDLE MENU CONTROLLERS
+        if ui.pause_menu.is_enabled:
+            game_loop = ui.pause_menu.controller(key)
 
 
 app.run()
