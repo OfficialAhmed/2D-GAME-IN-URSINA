@@ -1,4 +1,4 @@
-from ursina import Text, Entity, Keys
+from ursina import Text, Sprite, Keys
 from ursina import color as Color
 from ursina import destroy as Destroy
 
@@ -42,10 +42,9 @@ class PauseMenu:
 
         self.is_enabled = True
         self.unpause_game = True
-        self.menu = Entity(
-            model="quad",
+        self.menu = Sprite(
             texture=self.texture(self._current_option),
-            scale=(15, 9),
+            scale=3,
             always_on_top=True
         )
 
@@ -89,26 +88,24 @@ class Ui:
     __health:         Text = None
     __gun_capacity:   Text = None
 
-    def __init__(self, Entity: Entity) -> None:
+    def __init__(self, Sprite: Sprite) -> None:
 
         # MENUS
         self.pause_menu = PauseMenu()
 
         # HUD BACKGROUND UI
-        Entity(
-            model="quad",
+        Sprite(
             texture="Assets/Interface/HUD.png",
-            scale=(5.5, 2),
-            position=(-4.3, 3.1),
+            scale=2.8,
+            position=(-4.5, 3.1),
             always_on_top=True
         )
 
         # WEAPON ICON
-        Entity(
-            model="quad",
+        Sprite(
             texture="Assets/Interface/Icons/Weapons/shotgun.png",
-            scale=(1.75, 1.5),
-            position=(-5.9, 3.25),
+            scale=2.5,
+            position=(-6.1, 3.25),
             always_on_top=True
         )
 
@@ -124,19 +121,19 @@ class Ui:
         )
 
     def render_ammo(self, total):
-        self.__ammo = self._render_text(total, -0.72, 0.29)
+        self.__ammo = self._render_text(total, -0.75, 0.29)
 
     def render_money(self, total):
-        self.__money = self._render_text(total, -0.25, 0.45)
+        self.__money = self._render_text(total, -0.28, 0.45)
 
     def render_armor(self, total):
-        self.__armor = self._render_text(f"{total}%", -0.45, 0.44)
+        self.__armor = self._render_text(f"{total}%", -0.46, 0.44)
 
     def render_health(self, total):
-        self.__health = self._render_text(f"{total}%", -0.45, 0.36)
+        self.__health = self._render_text(f"{total}%", -0.46, 0.36)
 
     def render_mag_capacity(self, total):
-        self.__gun_capacity = self._render_text(f"\{total}", -0.67, 0.29)
+        self.__gun_capacity = self._render_text(f"\{total}", -0.69, 0.29)
 
     def update_ammo(self, total):
         if self.__ammo:

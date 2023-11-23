@@ -3,12 +3,13 @@ from ursina import time as Time
 
 
 class Fps:
-
-    current_frame = 0
-    elapsed_frames = 0
+    """
+        FRAME MANIPULATION
+    """
 
     def __init__(self) -> None:
-        pass
+        self.current_frame = 0
+        self.elapsed_frames = 0
 
 
 class Scene:
@@ -19,55 +20,55 @@ class Scene:
         self.sky = Sprite(
             "Assets/Animation/Stage/sky.png",
             scale=3.5,
-            position=(-1, 0, 0)
+            position=(-1, 0)
         )
 
         self.moon = Sprite(
             "Assets/Animation/Stage/moon.png",
             scale=2.5,
-            position=(-3.5, 2, 0),
+            position=(-3.5, 2),
             always_on_top=True
         )
 
         self.far_clouds = Sprite(
             "Assets/Animation/Stage/far_clouds.png",
             scale=2,
-            position=(0, 0, 0),
+            position=(0, 0),
             always_on_top=True
         )
 
         self.clouds = Sprite(
             "Assets/Animation/Stage/clouds.png",
             scale=2,
-            position=(6, -0.7, 0),
+            position=(6, -0.7),
             always_on_top=True
         )
 
         self.far_mountains = Sprite(
             "Assets/Animation/Stage/far_mountains.png",
             scale=2,
-            position=(-1, -1, 0),
+            position=(-1, -1),
             always_on_top=True
         )
 
         self.mountains = Sprite(
             "Assets/Animation/Stage/mountains.png",
             scale=2,
-            position=(9, -1, 0),
+            position=(9, -1),
             always_on_top=True
         )
 
         self.trees = Sprite(
             "Assets/Animation/Stage/trees.png",
             scale=2,
-            position=(25, -1.3, 0),
+            position=(25, -1.3),
             always_on_top=True
         )
 
         self.ground = Sprite(
             "Assets/Animation/Stage/ground.png",
             scale=3,
-            position=(79.2, -2, 0),
+            position=(79.2, -2),
             always_on_top=True
         )
 
@@ -83,6 +84,9 @@ class Scene:
         }
 
     def update(self):
+        """
+            UPDATES THE POSITION OF THE BACKGROUND
+        """
 
         speed = self.ANIMATION_SPEED * Time.dt
 
