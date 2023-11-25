@@ -3,6 +3,7 @@ from ursina import color as Color
 from ursina import destroy as Destroy
 
 
+
 class PauseMenu:
 
     def __init__(self) -> None:
@@ -88,13 +89,13 @@ class Ui:
     __health:         Text = None
     __gun_capacity:   Text = None
 
-    def __init__(self, Sprite: Sprite) -> None:
+    def __init__(self, sprite: Sprite) -> None:
 
         # MENUS
         self.pause_menu = PauseMenu()
 
         # HUD BACKGROUND UI
-        Sprite(
+        self.frame: Sprite = sprite(
             texture="Assets/Interface/HUD.png",
             scale=2.8,
             position=(-4.5, 3.1),
@@ -102,7 +103,7 @@ class Ui:
         )
 
         # WEAPON ICON
-        Sprite(
+        self.weapon_icon = sprite(
             texture="Assets/Interface/Icons/Weapons/shotgun.png",
             scale=2.5,
             position=(-6.1, 3.25),
@@ -119,6 +120,10 @@ class Ui:
             color=Color.white,
             always_on_top=True
         )
+
+    def update_ui_pos(self, speed):
+        self.frame.position += (speed, 0, 0)
+        self.weapon_icon.position += (speed, 0, 0)
 
     def render_ammo(self, total):
         self.__ammo = self._render_text(total, -0.75, 0.29)

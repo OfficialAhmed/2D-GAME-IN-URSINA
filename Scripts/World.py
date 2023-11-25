@@ -1,3 +1,9 @@
+"""
+
+    ALL CLASSES DO NOT INHERIT FROM OTHER SCRIPTS
+    
+"""
+
 from ursina import Sprite
 from ursina import time as Time
 
@@ -10,6 +16,15 @@ class Fps:
     def __init__(self) -> None:
         self.current_frame = 0
         self.elapsed_frames = 0
+
+
+class Collidable:
+    """
+        ENTITIES CAN BE COLLIDED WITH OTHER OBJECTS STORED HERE
+    """
+
+    entities = []           # ENTITIES CAN BE CHECKED FOR COLLISION
+    flagged_delete = []     # ENTITIES TO BE DELETED
 
 
 class Scene:
@@ -113,6 +128,3 @@ class Scene:
             self.sky.x += speed / self.animation_delay.get("sky")
             self.far_clouds.x += speed / self.animation_delay.get("far_clouds")
             self.clouds.x += speed / self.animation_delay.get("clouds")
-
-        # UPDATE GROUND - INDEPENDENTLY
-        self.ground.x -= speed/1.2

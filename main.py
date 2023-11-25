@@ -1,7 +1,8 @@
 from ursina import time as Time
 from ursina import Ursina, Sprite, Audio
+from ursina import destroy as Destroy
 
-from Scripts.World import Scene
+from Scripts.World import Scene, Collidable
 from Scripts.Characters import Player, Enemy
 from Scripts.Interface import Ui
 
@@ -12,12 +13,12 @@ app = Ursina()
 atmosphere = Audio("Assets/Sound/atmosphere.mp3", loop=True)
 atmosphere.volume = 0.9
 
-ui = Ui(Sprite=Sprite)
+ui = Ui(sprite=Sprite)
 scene = Scene(Sprite=Sprite)
-
 player = Player(
     Sprite(
-        collider="square",
+        name="player",
+        collider="box",
         scale=(5, 2),
         position=(-6, -2.2),
         always_on_top=True,
@@ -27,12 +28,14 @@ player = Player(
 
 enemy = Enemy(
     Sprite(
-        collider="square",
+        name="soldier",
+        collider="box",
         scale=(2.7, 1.9),
         position=(1, -2.25),
         always_on_top=True,
     ),
-    ui
+    ui,
+    player
 )
 
 ambient_sound = (
@@ -43,6 +46,10 @@ ambient_sound = (
 
 game_loop = True
 
+colliders = Collidable()
+colliders.entities.append(player)
+colliders.entities.append(enemy)
+
 ###############################################
 #       ENGINE AUTO INVOKED METHODS
 ###############################################
@@ -51,28 +58,28 @@ game_loop = True
 def update():
     global ambient_sound
 
-    if game_loop:       # HANDLE GAME LOGIC
+    if game_loop:       # HANDLE GAME LOGIC (FPS)
 
-        player.elapsed_frames += Time.dt
-        enemy.elapsed_frames += Time.dt
-
-        # UPDATE CHARACTER
         player.last_fire_frame += Time.dt
         player.elapsed_loop_duration += Time.dt
+
+        player.elapsed_frames += Time.dt
+        player.move()
         player.update()
 
-        if player.position_on_origin():
-            scene.update()
+        if enemy:
+            enemy.elapsed_frames += Time.dt
+            enemy.update()
 
         # EVERY 20 UNITS TRAVELED GENERATE RANDOM ZOMBIE SOUND
         if scene.ground.x % 20 <= 0.1:
             Randomize(ambient_sound).play()
 
-        # UPDATE ENEMIES
-        enemy.update_ai()
+        # DESTROY FLAGGED ENTITIES
+        for collider in colliders.flagged_delete:
+            Destroy(collider.entity)
 
-    else:               # HANDLE MENUS UI
-        pass
+        colliders.flagged_delete.clear()
 
 
 def input(key):
