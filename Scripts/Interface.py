@@ -1,7 +1,7 @@
 from ursina import Text, Sprite, Keys
 from ursina import color as Color
 from ursina import destroy as Destroy
-
+from ursina import camera as Camera
 
 
 class PauseMenu:
@@ -43,9 +43,12 @@ class PauseMenu:
 
         self.is_enabled = True
         self.unpause_game = True
+        cam_pos = Camera.position
+        
         self.menu = Sprite(
             texture=self.texture(self._current_option),
             scale=3,
+            position=(cam_pos.x, cam_pos.y),
             always_on_top=True
         )
 

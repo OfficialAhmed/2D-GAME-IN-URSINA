@@ -2,31 +2,32 @@ from ursina import Sprite, Audio, Keys
 from ursina import time as Time
 
 from ursina import camera as Camera
+from random import randint as Randint
 from ursina import destroy as Destroy
 from ursina import load_texture as LoadTexture
+
 
 from .World import Fps, Collidable
 from .Interface import Ui
 
 
-class Character(Fps):
+class Character(Fps, Collidable):
 
     def __init__(self) -> None:
         super().__init__()
 
         self.SPEED = 1.7
 
-        self.health = 100
         self.aiming_timer = 0               # TO HOLD DURATION OF THE AIMING FRAME
-        self.is_animating = False           # TO DETERMINE WHETHER ANIMATION LOOP ENDED
         self.is_gun_triggered = False       # TO DISABLE MULTIPLE SHOOTING
 
+        self.health = 100
         self.state = "idle"
         self.direction = "Right"
-        self.elapsed_loop_duration = 0
 
-        self.last_fire_frame = 0
         self.fire_cooldown = 0.3
+
+        self.hit_animation_frame = 0
 
         # DELAY BETWEEN EACH TEXTURE FRAME
         # SOME AFFECT THE STATE SPEED, OTHER AFFECT THE ANIMATION SPEED ONLY
@@ -41,43 +42,36 @@ class Character(Fps):
         # OVERWRITTEN BY THE INSTANCE
         self.weapon:            Weapon = None
         self.entity:            Sprite = None
-        self.texture:           dict = {}
-        self.total_textures:    dict = {}
+        self.frame:             dict = {}
+        self.TEXTURE:           dict = {}
+        self.TOTAL_TEXTURES:    dict = {}
 
-    def update_texture(self):
+    def update_animation_no_repeat(self, after_animation: str):
         """
-            UPDATES THE TEXTURE OF THE CHARACTER IN ONE LOOP ONLY
+            UPDATES THE TEXTURE IN ONE LOOP ONLY
         """
-
-        # AIMING IS ONE FRAME NOT AN ANIMATION
-        if self.state == "aim":
-            return
 
         if self.elapsed_frames >= self.texture_delay.get(self.state):
+
             self.elapsed_frames = 0
+            current_frame = self.frame.get(self.state)
+            total_frames = self.TOTAL_TEXTURES.get(self.state) - 1
 
-            # CHANGE TEXTURE
-            self.entity.texture = self.texture.get(
-                self.direction
-            ).get(self.state).get(self.current_frame)
+            if current_frame < total_frames:        # MORE FRAMES LEFT TO ANIMATE
 
-            total_frames = self.total_textures.get(self.state)
+                self.entity.texture = self.TEXTURE.get(
+                    self.direction
+                ).get(self.state).get(current_frame)
 
-            if self.current_frame < total_frames:
-                self.is_animating = True
+                self.frame[self.state] += 1
 
-            # REACHED LAST ANIMATION FRAME, CHANGE STATE
-            else:
-                match self.state:
-                    case "fire" | "reload":
-                        self.state = "aim"
-                        self.current_frame = 0
-                        self.elapsed_loop_duration = 0
-                        self.is_animating = False
+            else:                                   # REACHED LAST ANIMATION FRAME
 
-            self.current_frame += 1
+                # RESET CURRNET STATE FRAME COUNTER
+                self.frame[self.state] = 0
+                self.state = after_animation
 
-    def update_texture_repeat(self):
+    def update_animation_repeat(self):
         """
             UPDATES THE TEXTURE IN REPEAT MODE
         """
@@ -86,33 +80,27 @@ class Character(Fps):
         if self.elapsed_frames >= self.texture_delay.get(self.state):
 
             self.elapsed_frames = 0
-            total_frames = self.total_textures.get(self.state)
+            total_frames = self.TOTAL_TEXTURES.get(self.state)
+            current_frame = self.frame.get(self.state)
 
             # CHANGE TEXTURE
-            self.entity.texture = self.texture.get(
+            self.entity.texture = self.TEXTURE.get(
                 self.direction
-            ).get(self.state).get(self.current_frame)
+            ).get(self.state).get(current_frame)
 
             # LOOP ANIMATION FRAMES
-            self.current_frame = (self.current_frame + 1) % total_frames
-
-    def position_on_origin(self):
-
-        # WHILE RUNNING AND REACHED MIDDLE SCREEN
-        return True if self.entity.x > 0 and self.state == "run" else False
+            self.frame[self.state] = (current_frame + 1) % total_frames
 
 
 class Weapon(Collidable):
 
     # _____   CONSTANTS   ____________
-    DRAG = 9                # BULLET DEDUCTION SPEED
-    SPEED = 6               # BULLET LIMIT SPEED
     VELOCITY = 15           # BULLET STARTING SPEED
 
     def __init__(
         self,
-        entity,
         ui,
+        entity,
         capacity,
         total_ammo,
         total_ammo_mag,
@@ -176,6 +164,21 @@ class Weapon(Collidable):
         self.total_ammo_mag -= 1
         self.ui.update_mag_capacity(self.total_ammo_mag)
 
+    def is_bullet_collided(self, opponent: Character, bullet: Sprite, bullet_index: int) -> bool:
+
+        # IF COLLISION DETECTED AND NOT COLLIDING WITH ITSELF
+        if opponent.entity.name != self.entity.name and bullet.intersects(opponent.entity):
+
+            if bullet.x >= opponent.entity.position.x - 0.4:        # 0.4 DIFFERENCE FROM TEXTURE TO THE FRAME
+
+                # REMOVE BULLET
+                Destroy(bullet)
+                self.bullets.pop(bullet_index)
+
+                return True
+
+        return False
+
     def animate_bullet(self):
 
         bullets: list[dict] = self.bullets.copy()
@@ -184,10 +187,6 @@ class Weapon(Collidable):
 
             speed = bullet_data["speed"]
             bullet = bullet_data["bullet"]
-
-            # CALCULATE DRAGE
-            if speed > self.SPEED:
-                speed -= self.DRAG * Time.dt
 
             # ANIMATE MOVEMENT
             if bullet_data["direction"] == "Right":
@@ -202,95 +201,94 @@ class Weapon(Collidable):
 
             # COLLISION DETECTION
             for entity_index, entity in enumerate(self.entities.copy()):
-                if self.is_bullet_collided(entity, bullet_data["bullet"], bullet_index, entity_index):
+
+                if self.is_bullet_collided(entity, bullet_data["bullet"], bullet_index):
+
+                    entity.state = "hit"
+
+                    entity.hit(entity, entity_index)
                     break
-
-    def is_bullet_collided(self, opponent: Character, bullet: Sprite, bullet_index: int, entity_index: int) -> bool:
-
-        # IF COLLISION DETECTED AND NOT COLLIDING WITH ITSELF
-        if opponent.entity.name != self.entity.name and bullet.intersects(opponent.entity):
-
-            if bullet.x >= opponent.entity.position.x - 0.5:        # 0.5 DIFFERENCE FROM TEXTURE TO THE FRAME
-
-                # REMOVE BULLET
-                Destroy(bullet)
-                self.bullets.pop(bullet_index)
-
-                # DAMAGE DEALT FROM WEAPON POWER
-                opponent.health -= self.power
-
-                if opponent.health <= 0:
-
-                    # FLAG CURRENT OBJECT TO DESTROY
-                    self.flagged_delete.append(opponent)
-                    self.entities.pop(entity_index)
 
 
 class Player(Character):
 
     MAX_RANGE = 7           # BULLET DISTANCE
-    SHOTGUN_POWER = 35      # OUT OF 100
+    SHOTGUN_POWER = 25
     WEAPON_Y_POS = -2.1
     SHOTGUN_CAPACITY = 4    # MAGAZINE CAPACITY
 
     def __init__(self, entity: Sprite, ui: Ui) -> None:
         super().__init__()
 
+        self.TOTAL_TEXTURES = {
+            "idle":     6,
+            "run":      8,
+            "fire":     12,
+            "reload":   12,
+            "aim":      1
+        }
+
+        self.TEXTURE = {
+            "Right": {
+                "aim":        {0: LoadTexture(f"Assets/Animation/Char/Attack/Fire/Right/0.png")},
+                "run":        {i: LoadTexture(f"Assets/Animation/Char/Run/Right/{i}.png") for i in range(self.TOTAL_TEXTURES.get("run"))},
+                "idle":       {i: LoadTexture(f"Assets/Animation/Char/Idle/Right/{i}.png") for i in range(self.TOTAL_TEXTURES.get("idle"))},
+                "fire":       {i: LoadTexture(f"Assets/Animation/Char/Attack/Fire/Right/{i}.png") for i in range(self.TOTAL_TEXTURES.get("fire"))},
+                "reload":     {i: LoadTexture(f"Assets/Animation/Char/Attack/Reload/Right/{i}.png") for i in range(self.TOTAL_TEXTURES.get("reload"))}
+            },
+            "Left": {
+                "aim":        {0: LoadTexture(f"Assets/Animation/Char/Attack/Fire/Left/0.png")},
+                "run":        {i: LoadTexture(f"Assets/Animation/Char/Run/Left/{i}.png") for i in range(self.TOTAL_TEXTURES.get("run"))},
+                "idle":       {i: LoadTexture(f"Assets/Animation/Char/Idle/Left/{i}.png") for i in range(self.TOTAL_TEXTURES.get("idle"))},
+                "fire":       {i: LoadTexture(f"Assets/Animation/Char/Attack/Fire/Left/{i}.png") for i in range(self.TOTAL_TEXTURES.get("fire"))},
+                "reload":     {i: LoadTexture(f"Assets/Animation/Char/Attack/Reload/Left/{i}.png") for i in range(self.TOTAL_TEXTURES.get("reload"))}
+            }
+        }
+
+        self.texture_delay["aim"] = 0.2
+
+        # FRAMES COUNTER
+        self.frame = {
+            "idle":     0,
+            "run":      0,
+            "fire":     0,
+            "reload":   0,
+            "aim":      0
+        }
+
+        self.ui = ui
         self.entity = entity
 
         self.total_ammo = 20
         self.total_ammo_mag = self.SHOTGUN_CAPACITY
 
-        self.weapon = Weapon(
-            entity,
-            ui,
-            self.SHOTGUN_CAPACITY,
-            self.total_ammo,
-            self.total_ammo_mag,
-            self.WEAPON_Y_POS,
-            self.MAX_RANGE,
-            self.SHOTGUN_POWER
-        )
-
-        self.ui = ui
         ui.render_money(50)
         ui.render_armor(100)
-        ui.render_health(100)
+        ui.render_health(self.health)
         ui.render_ammo(self.total_ammo)
         ui.render_mag_capacity(self.total_ammo_mag)
 
-        self.total_textures = {
-            "idle":     5,
-            "run":      7,
-            "fire":     11,
-            "reload":   11,
-            "aim":      1
-        }
-
-        self.texture = {
-            "Right": {
-                "idle":       {i: LoadTexture(f"Assets/Animation/Char/Idle/Right/{i}.png") for i in range(self.total_textures.get("idle")+1)},
-                "run":        {i: LoadTexture(f"Assets/Animation/Char/Run/Right/{i}.png") for i in range(self.total_textures.get("run")+1)},
-                "fire":       {i: LoadTexture(f"Assets/Animation/Char/Attack/Fire/Right/{i}.png") for i in range(self.total_textures.get("fire")+1)},
-                "reload":     {i: LoadTexture(f"Assets/Animation/Char/Attack/Reload/Right/{i}.png") for i in range(self.total_textures.get("reload")+1)},
-                "aim":        {0: LoadTexture(f"Assets/Animation/Char/Attack/Fire/Right/0.png")},
-            },
-            "Left": {
-                "idle":       {i: LoadTexture(f"Assets/Animation/Char/Idle/Left/{i}.png") for i in range(self.total_textures.get("idle")+1)},
-                "run":        {i: LoadTexture(f"Assets/Animation/Char/Run/Left/{i}.png") for i in range(self.total_textures.get("run")+1)},
-                "fire":       {i: LoadTexture(f"Assets/Animation/Char/Attack/Fire/Left/{i}.png") for i in range(self.total_textures.get("fire")+1)},
-                "reload":     {i: LoadTexture(f"Assets/Animation/Char/Attack/Reload/Left/{i}.png") for i in range(self.total_textures.get("reload")+1)},
-                "aim":        {0: LoadTexture(f"Assets/Animation/Char/Attack/Fire/Left/0.png")},
-            },
-        }
-
-        self.is_fire_cooldown = lambda: (
-            self.last_fire_frame >= self.fire_cooldown
+        self.weapon = Weapon(
+            ui=ui,
+            entity=entity,
+            max_range=self.MAX_RANGE,
+            power=self.SHOTGUN_POWER,
+            total_ammo=self.total_ammo,
+            capacity=self.SHOTGUN_CAPACITY,
+            weapon_y_pos=self.WEAPON_Y_POS,
+            total_ammo_mag=self.total_ammo_mag
         )
+
+        # DETERMINE WHETHER ANIMATION LOOP ENDED
+        self.is_animating = lambda: (
+            self.frame.get(self.state) != 0
+        )
+        self.timer = 0
 
     def controller(self, key):
 
         match key:
+
             case Keys.right_arrow:
                 self.state = "run"
                 self.direction = "Right"
@@ -303,15 +301,36 @@ class Player(Character):
                 self.state = "idle"
 
             case "space":
-                # COOLDOWN FIRING
-                if self.is_fire_cooldown:
 
-                    # CANNOT FIRE WHILE RELOADING
-                    if self.state != "reload":
+                # RESTRICT FIRING WHILE RELOADING
+                if self.state != "reload":
+                    self.state = "fire"
+                    self.is_gun_triggered = True
 
-                        self.state = "fire"
-                        self.last_fire_frame = 0
-                        self.is_gun_triggered = True
+    def spawn_enemy(self):
+
+        # MAKE SURE ALWAYS 4 ENEMIES IN THE WORLD
+        if len(self.entities) <= 4:
+            x = self.entity.world_position_getter().x + Randint(15, 29)
+            self.entities.append(
+                Enemy(
+                    Sprite(
+                        name="soldier",
+                        collider="box",
+                        scale=(2.7, 1.9),
+                        position=(x, -2.25),
+                        always_on_top=True,
+                    ),
+                    self.ui,
+                    self
+                )
+            )
+
+        # DESPAWN ENEMIES LEFT THE SCREEN
+        for index, enemy in enumerate(self.entities.copy()):
+            if enemy.entity.name != "player":
+                if enemy.entity.world_position_getter().x <= self.entity.world_position_getter().x - 5:
+                    enemy.hit(enemy, index)
 
     def update(self):
         """
@@ -320,127 +339,125 @@ class Player(Character):
 
         self.weapon.direction = self.direction
         self.weapon.animate_bullet()
+        self.spawn_enemy()
 
         match self.state:
 
             case "idle":
-                self.update_texture_repeat()
+                self.update_animation_repeat()
 
             case "run":
-                self.update_texture_repeat()
+                self.update_animation_repeat()
+
+                speed = self.SPEED * Time.dt
+                if self.direction == "Left":
+                    speed *= -1     # NEGATIVE VALUE
+
+                self.entity.x += speed
+                Camera.position += (speed, 0, 0)
+                self.ui.update_ui_pos(speed)
 
             case "reload":
-                self.update_texture()
+                self.update_animation_no_repeat(after_animation="aim")
 
                 # RELOAD AMMO ONCE RELOADING-ANIMATION ENDED
                 if self.weapon.total_ammo_mag != self.weapon.capacity:
-                    if not self.is_animating:
+                    if not self.is_animating():
                         self.weapon.loaded_sound.play()
                         self.weapon.reload()
 
             case "aim":
 
-                self.aiming_timer += Time.dt
-                self.entity.texture = self.texture.get(
+                self.entity.texture = self.TEXTURE.get(
                     self.direction).get("aim").get(0)
 
                 # PAUSE ANIMATION FOR SOME TIME THEN BACK TO IDLE
-                if self.aiming_timer >= 60 * 1.1 * Time.dt:
+                if self.aiming_timer >= 70 * Time.dt:
                     self.state = "idle"
+                self.aiming_timer += Time.dt
 
             case "fire":
+
                 self.aiming_timer = 0
 
                 # FIRE A BULLET IF MAGAZINE NOT EMPTY
                 if self.weapon.total_ammo_mag > 0:
 
-                    # SYNC BULLET AND FIRING ANIMATION
-
                     # IF NO ANIMATION PLAYED, SPAWN ONE BULLET
-                    if self.is_gun_triggered and not self.is_animating:
-                        self.update_texture()
+                    if self.is_gun_triggered and not self.is_animating():
+                        self.update_animation_no_repeat(after_animation="aim")
                         self.weapon.spawn_bullet()
                         self.weapon.shoot_sound.play()
                         self.is_gun_triggered = False
 
                 # MAG IS EMPTY, RELOAD
                 elif self.weapon.total_ammo >= self.weapon.capacity:
-                    self.aiming_timer = 0
                     self.state = "reload"
                     self.weapon.reload_sound.play()
 
                 # NO MORE AMMO, KEEP AIMING
-                elif self.weapon.total_ammo == 0:
-                    self.weapon.empty_sound.play()
+                else:
                     self.state = "aim"
+                    self.weapon.empty_sound.play()
 
-                self.update_texture()
-
-    def move(self):
-
-        speed = self.SPEED * Time.dt
-
-        if self.state == "run":
-
-            if self.direction == "Left":
-                self.entity.x -= speed
-
-            else:
-                self.entity.x += speed
-
-                # UPDATE CAMERA POSITION
-                if self.position_on_origin():
-                    Camera.position += (speed, 0, 0)
-                    self.ui.update_ui_pos(speed)
+                self.update_animation_no_repeat(after_animation="aim")
 
 
 class Enemy(Character):
 
-    FOV = 3.5         # FIELD OF VIEW
-    SPEED = 0.2
-
     def __init__(self, entity: Sprite, ui: Ui, player: Player) -> None:
         super().__init__()
+
+        self.FOV = 3.5         # FIELD OF VIEW
+        self.SPEED = 0.7
 
         self.entity = entity
         self.player = player
 
-        self.direction = "Right"
-        self.state = "idle"
-        self.current_frame = 0
+        self.alert_sound = Audio(f"Assets/Sound/Soldier/alert.mp3", False)
 
-        self.is_player_detected = False
+        # ENEMY SPECIFIC TEXTURES DELAY
+        self.texture_delay["hit"] = 0.1
+        self.texture_delay["die"] = 0.5
+        self.texture_delay["shoot"] = 0.5
+        self.texture_delay["fight"] = 0.5
 
-        self.total_textures = {
+        # FRAMES COUNTER
+        self.frame = {
+            "hit":  0,
+            "idle": 0,
+            "walk": 0,
+            "die":  0
+        }
+
+        self.TOTAL_TEXTURES = {
             "idle":     7,
             "walk":     7,
-            "run":      7,
-            "fire":     11,
-            "reload":   11,
+            "hit":      3,
+            "die":      4,
+            "fight":    3,
+            "shoot":    4,
             "aim":      1
         }
 
-        self.texture = {
+        self.TEXTURE = {
             "Right": {
-                "idle":       {i: LoadTexture(f"Assets/Animation/Soldier/Idle/Right/{i}.png") for i in range(self.total_textures.get("idle")+1)},
-                "walk":       {i: LoadTexture(f"Assets/Animation/Soldier/Walk/Right/{i}.png") for i in range(self.total_textures.get("walk")+1)},
-                # "run":        {i: LoadTexture(f"Assets/Animation/Soldier/Run/Right/{i}.png") for i in range(self.total_textures.get("run")+1)},
-                # "fire":       {i: LoadTexture(f"Assets/Animation/Soldier/Attack/Fire/Right/{i}.png") for i in range(self.total_textures.get("fire")+1)},
-                # "reload":     {i: LoadTexture(f"Assets/Animation/Soldier/Attack/Reload/Right/{i}.png") for i in range(self.total_textures.get("reload")+1)},
-                # "aim":        {0: LoadTexture(f"Assets/Animation/Soldier/Attack/Fire/Right/0.png")},
+                "idle":       {i: LoadTexture(f"Assets/Animation/Soldier/Idle/Right/{i}.png") for i in range(self.TOTAL_TEXTURES.get("idle"))},
+                "walk":       {i: LoadTexture(f"Assets/Animation/Soldier/Walk/Right/{i}.png") for i in range(self.TOTAL_TEXTURES.get("walk"))},
+                "hit":        {i: LoadTexture(f"Assets/Animation/Soldier/Hit/Right/{i}.png") for i in range(self.TOTAL_TEXTURES.get("hit"))},
+                "die":        {i: LoadTexture(f"Assets/Animation/Soldier/Die/Right/{i}.png") for i in range(self.TOTAL_TEXTURES.get("die"))},
+                "aim":        {0: LoadTexture(f"Assets/Animation/Soldier/Attack/Fire/Right/0.png")},
             },
 
             "Left": {
-                "idle":       {i: LoadTexture(f"Assets/Animation/Soldier/Idle/Left/{i}.png") for i in range(self.total_textures.get("idle")+1)},
-                "walk":       {i: LoadTexture(f"Assets/Animation/Soldier/Walk/Left/{i}.png") for i in range(self.total_textures.get("walk")+1)},
-                # "run":        {i: LoadTexture(f"Assets/Animation/Soldier/Run/Left/{i}.png") for i in range(self.total_textures.get("run")+1)},
-                # "fire":       {i: LoadTexture(f"Assets/Animation/Soldier/Attack/Fire/Left/{i}.png") for i in range(self.total_textures.get("fire")+1)},
-                # "reload":     {i: LoadTexture(f"Assets/Animation/Soldier/Attack/Reload/Left/{i}.png") for i in range(self.total_textures.get("reload")+1)},
-                # "aim":        {0: LoadTexture(f"Assets/Animation/Soldier/Attack/Fire/Left/0.png")},
-            },
+                "idle":       {i: LoadTexture(f"Assets/Animation/Soldier/Idle/Left/{i}.png") for i in range(self.TOTAL_TEXTURES.get("idle"))},
+                "walk":       {i: LoadTexture(f"Assets/Animation/Soldier/Walk/Left/{i}.png") for i in range(self.TOTAL_TEXTURES.get("walk"))},
+                "hit":        {i: LoadTexture(f"Assets/Animation/Soldier/Hit/Left/{i}.png") for i in range(self.TOTAL_TEXTURES.get("hit"))},
+                "die":        {i: LoadTexture(f"Assets/Animation/Soldier/Die/Left/{i}.png") for i in range(self.TOTAL_TEXTURES.get("die"))},
+                "aim":        {0: LoadTexture(f"Assets/Animation/Soldier/Attack/Fire/Left/0.png")},
+            }
         }
 
-        self.health = 100
         self.weapon = Weapon(
             ui=ui,
             power=20,
@@ -452,37 +469,45 @@ class Enemy(Character):
             weapon_y_pos=(1, -1),
         )
 
+        # AI SPECIFIC DATA
         self.frames_per_state = 4       # FRAMES LIMIT TO CHANGE STATE
         self.ai_elapsed_frames = 0      # HOLDS FPS FOR THE AI MOVEMENT
+        self.is_player_detected = False
 
     def update(self):
         """
             CHECKS THE STATE OF THE ENEMY AND UPDATE THE ANIMATION
         """
 
-        if not self.entity:
-            return
-
         self.weapon.direction = self.direction
         self.weapon.animate_bullet()
-
-        self.update_field_of_view()
-        self.update_ai()
 
         match self.state:
 
             case "idle":
-                self.update_texture_repeat()
+                self.update_animation_repeat()
 
             case "walk":
-                self.update_texture_repeat()
+                self.update_animation_repeat()
+
+            case "hit":
+                self.update_animation_no_repeat(after_animation="idle")
+
+            case "die":
+                self.update_animation_no_repeat(after_animation="idle")
+
+        self.update_ai()
 
     def update_ai(self):
 
         self.ai_elapsed_frames += Time.dt
 
+        if self.state == "hit":
+            return
+
         # SOLDIER PATROLLING
-        if self.ai_elapsed_frames >= self.frames_per_state and not self.is_player_detected:
+        elif self.ai_elapsed_frames >= self.frames_per_state and not self.is_player_detected:
+
             if self.state == "idle":
                 self.direction = "Left" if self.direction == "Right" else "Right"
                 self.state = "walk"
@@ -496,10 +521,12 @@ class Enemy(Character):
 
             speed = self.SPEED * Time.dt
 
-            if self.direction == "Right":
-                self.entity.x += speed
-            else:
-                self.entity.x -= speed
+            if self.direction == "Left":
+                speed *= -1
+
+            self.entity.x += speed
+
+        self.update_field_of_view()
 
     def update_field_of_view(self):
         """
@@ -519,4 +546,17 @@ class Enemy(Character):
             self.is_player_detected = True
 
         else:
+            self.alert_sound.play()
             self.is_player_detected = False
+
+    def hit(self, entity, entity_index, despawn=False):
+
+        if self.health <= 0 or despawn:
+
+            self.state = "die"
+            self.flagged_delete.append(entity)
+            self.entities.pop(entity_index)
+
+        else:
+
+            self.health -= self.player.SHOTGUN_POWER
