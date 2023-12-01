@@ -26,7 +26,7 @@ class Screen:
 
     def is_item_in_view(self, pos_x) -> bool:
         """
-            DETERMINE IF THE X-POSITION OF THE ITEM IS WITHING THE SCREEN VIEW
+            DETERMINE IF THE X-POSITION OF THE ITEM IS WITHIN THE SCREEN VIEW
         """
         center = Camera.world_position_getter().x
         frame_r = center + 7.5

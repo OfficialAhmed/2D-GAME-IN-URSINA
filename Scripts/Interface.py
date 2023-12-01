@@ -114,7 +114,6 @@ class Ui:
         )
 
     def _render_text(self, text, x, y, scale=1) -> Text:
-        
         return Text(
             text=text,
             scale=scale,

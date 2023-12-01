@@ -1,4 +1,4 @@
-from ursina import Sprite, Audio, Keys
+from ursina import Sprite, Audio, Keys, Text
 from ursina import time as Time
 
 from ursina import camera as Camera
@@ -8,7 +8,7 @@ from ursina import load_texture as LoadTexture
 
 
 from .Interface import Ui
-from .Resources import Item
+from .Resources import Chest
 from .World import Fps, Collidable
 
 
@@ -215,6 +215,7 @@ class Player(Character):
     WEAPON_Y_POS = -2.1
     SHOTGUN_CAPACITY = 4    # MAGAZINE CAPACITY
     VISIBLE_AREA = 13       # THE CAMERA FOV IN PIXELS
+    TOTAL_AMMO = 20         # STARTING AMMO
 
     def __init__(self, entity: Sprite, ui: Ui) -> None:
         super().__init__()
@@ -258,27 +259,24 @@ class Player(Character):
         self.ui = ui
         self.entity = entity
 
-        self.total_ammo = 20
-        self.total_ammo_mag = self.SHOTGUN_CAPACITY
-
         ui.render_money(50)
         ui.render_armor(100)
         ui.render_health(self.health)
-        ui.render_ammo(self.total_ammo)
-        ui.render_mag_capacity(self.total_ammo_mag)
+        ui.render_ammo(self.TOTAL_AMMO)
+        ui.render_mag_capacity(self.SHOTGUN_CAPACITY)
 
         self.weapon = Weapon(
             ui=ui,
             entity=entity,
             max_range=self.MAX_RANGE,
             power=self.SHOTGUN_POWER,
-            total_ammo=self.total_ammo,
+            total_ammo=self.TOTAL_AMMO,
             capacity=self.SHOTGUN_CAPACITY,
             weapon_y_pos=self.WEAPON_Y_POS,
-            total_ammo_mag=self.total_ammo_mag
+            total_ammo_mag=self.SHOTGUN_CAPACITY
         )
 
-        self.items = Item(self.ui)
+        self.chest = Chest()
         self.enemy: Enemy = Enemy      # WITHOUT INVOKING THE CLASS
 
         # DETERMINE WHETHER ANIMATION LOOP ENDED
@@ -312,7 +310,20 @@ class Player(Character):
             case "o":
 
                 self.state = "idle"
-                self.items.open_chest_at(self.entity.position.x)
+                self.chest.open_at(self.entity.position.x)
+
+    def pick_ammo(self, ammo):
+        self.weapon.total_ammo += ammo
+        self.ui.update_ammo(self.weapon.total_ammo)
+
+    def popup(self, text) -> Text:
+        """
+            RENDER A TEXT ON TOP OF THE PLAYER. RETURN TEXT TO DESTROY LATER.
+        """
+
+        return self.ui.render_popup(
+            text, 0, -0.15, 1
+        )
 
     def generate_spwan_position(self, distance: int):
         """
@@ -330,8 +341,8 @@ class Player(Character):
         self.weapon.direction = self.direction
         self.weapon.animate_bullet()
         self.enemy.spawn(self, self.generate_spwan_position(50))
-        self.items.spawn_chest(self.generate_spwan_position(20))
-        self.items.update()
+        self.chest.spawn(self.generate_spwan_position(20))
+        self.chest.update()
 
         match self.state:
 
@@ -401,7 +412,7 @@ class Enemy(Character):
         super().__init__()
 
         self.FOV = 3.5         # FIELD OF VIEW
-        self.SPEED = 0.7
+        self.SPEED = 0.7       # MOVEMENT SPEED
 
         self.entity = entity
         self.player = player
@@ -464,7 +475,7 @@ class Enemy(Character):
         # AI SPECIFIC DATA
         self.frames_per_state = 4       # FRAMES LIMIT TO CHANGE STATE
         self.ai_elapsed_frames = 0      # HOLDS FPS FOR THE AI MOVEMENT
-        self.is_player_detected = False
+        self.player_detected = False
 
     def update(self):
         """
@@ -473,17 +484,8 @@ class Enemy(Character):
 
         match self.state:
 
-            case "idle":
-                self.update_animation_repeat()
-
-            case "walk":
-                self.update_animation_repeat()
-
-            case "hit":
-                self.update_animation_no_repeat(after_animation="idle")
-
-            case "die":
-                self.update_animation_no_repeat(after_animation="idle")
+            case "idle" | "walk":   self.update_animation_repeat()
+            case "hit" | "die":     self.update_animation_no_repeat(after_animation="idle")
 
         self.update_ai()
 
@@ -494,15 +496,30 @@ class Enemy(Character):
         if self.state == "hit":
             return
 
+        # CALCULATE THE DISTANCE BETWEEN THE PLAYER AND THE ENEMY
+        if abs(self.player.entity.position.x - self.entity.x) <= self.FOV:
+
+            # LOOK AT THE PLAYER
+            self.state = "idle"
+            self.direction = "Left" if self.entity.position.x > self.player.entity.position.x else "Right"
+            self.player_detected = True
+
+        else:
+            self.player_detected = False
+
         # SOLDIER PATROLLING
-        elif self.ai_elapsed_frames >= self.frames_per_state and not self.is_player_detected:
+        if self.ai_elapsed_frames >= self.frames_per_state:
 
-            if self.state == "idle":
-                self.direction = "Left" if self.direction == "Right" else "Right"
-                self.state = "walk"
+            if not self.player_detected:
 
-            elif self.state == "walk":
-                self.state = "idle"
+                # WHEN IDLING CHANGE NEXT PATROLLING DIRECTION
+                if self.state == "idle":
+                    self.direction = "Left" if self.direction == "Right" else "Right"
+                    self.state = "walk"
+
+                # STOP WALKING
+                elif self.state == "walk":
+                    self.state = "idle"
 
             self.ai_elapsed_frames = 0
 
@@ -513,24 +530,6 @@ class Enemy(Character):
                 speed *= -1
 
             self.entity.x += speed
-
-        self.update_field_of_view()
-
-    def update_field_of_view(self):
-        """
-            CHECK IF PLAYER IN FOV OF THE ENEMY
-        """
-
-        # CALCULATE THE DISTANCE BETWEEN THE PLAYER AND THE ENEMY
-        if abs(self.player.entity.position.x - self.entity.x) <= self.FOV:
-
-            # LOOK AT THE PLAYER
-            self.state = "idle"
-            self.direction = "Left" if self.entity.position.x > self.player.entity.position.x else "Right"
-            self.is_player_detected = True
-
-        else:
-            self.is_player_detected = False
 
     def hit(self, entity, entity_index, despawn=False):
 
