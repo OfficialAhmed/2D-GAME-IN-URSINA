@@ -31,8 +31,9 @@ _Ensure that you have Python and the necessary dependencies installed._
 
 # Controls
 
-- Arrow keys: Move the player.
-- Space bar: Fire.
+- Arrow keys :   Move the player.
+- Space bar  :   Fire.
+- O          :   Interact with items
 
 
 # Contributing
