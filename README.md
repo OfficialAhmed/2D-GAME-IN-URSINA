@@ -9,12 +9,12 @@ Welcome to the 2D Platformer Game Repository built using the [Ursina Python Engi
 
 - Clone this repository to your local machine:
 ```bash
-git clone https://github.com/your-username/2d-platformer-game.git
+git clone https://github.com/OfficialAhmed/2D-Gun-Glee.git
 ```
 
 - Navigate to the project directory:
 ```bash
-cd 2d-platformer-game
+cd 2d-Gun-Glee
 ```
 
 - Install the required dependencies:

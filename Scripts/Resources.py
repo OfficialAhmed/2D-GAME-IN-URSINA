@@ -1,6 +1,6 @@
 
-from Interface import Ui
-from World import Collidable
+from .Interface import Ui
+from .World import Collidable
 
 from ursina import Sprite
 from ursina import time as Time

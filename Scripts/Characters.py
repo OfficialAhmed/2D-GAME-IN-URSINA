@@ -7,9 +7,9 @@ from ursina import destroy as Destroy
 from ursina import load_texture as LoadTexture
 
 
-from Interface import Ui
-from Resources import Item
-from World import Fps, Collidable
+from .Interface import Ui
+from .Resources import Item
+from .World import Fps, Collidable
 
 
 class Character(Fps, Collidable):

@@ -6,6 +6,7 @@
 
 from ursina import Sprite
 from ursina import time as Time
+from ursina import camera as Camera
 
 
 class Fps:
@@ -16,19 +17,34 @@ class Fps:
     def __init__(self) -> None:
         self.current_frame = 0
         self.elapsed_frames = 0
-        
-    def item_on_screen(self):
-        print(Camera.world_position_getter())
-    
 
 
-class Collidable:
+class Screen:
+
+    def __init__(self) -> None:
+        pass
+
+    def is_item_in_view(self, pos_x) -> bool:
+        """
+            DETERMINE IF THE X-POSITION OF THE ITEM IS WITHING THE SCREEN VIEW
+        """
+        center = Camera.world_position_getter().x
+        frame_r = center + 7.5
+        frame_l = center - 7.5
+
+        return pos_x >= frame_l <= frame_r
+
+
+class Collidable(Screen):
     """
         ENTITIES CAN BE COLLIDED WITH OTHER OBJECTS STORED HERE
     """
 
     entities = []           # ENTITIES CAN BE CHECKED FOR COLLISION
     flagged_delete = []     # ENTITIES TO BE DELETED
+
+    def __init__(self) -> None:
+        super().__init__()
 
 
 class Scene:
