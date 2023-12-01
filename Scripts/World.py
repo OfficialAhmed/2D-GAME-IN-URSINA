@@ -16,6 +16,10 @@ class Fps:
     def __init__(self) -> None:
         self.current_frame = 0
         self.elapsed_frames = 0
+        
+    def item_on_screen(self):
+        print(Camera.world_position_getter())
+    
 
 
 class Collidable:

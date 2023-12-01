@@ -7,8 +7,9 @@ from ursina import destroy as Destroy
 from ursina import load_texture as LoadTexture
 
 
-from .World import Fps, Collidable
-from .Interface import Ui
+from Interface import Ui
+from Resources import Item
+from World import Fps, Collidable
 
 
 class Character(Fps, Collidable):
@@ -16,17 +17,22 @@ class Character(Fps, Collidable):
     def __init__(self) -> None:
         super().__init__()
 
-        self.SPEED = 1.7
+        # OVERWRITTEN BY THE INSTANCE
+        self.weapon:            Weapon = None
+        self.entity:            Sprite = None
+        self.frame:             dict = {}
+        self.TEXTURE:           dict = {}
+        self.TOTAL_TEXTURES:    dict = {}
 
         self.aiming_timer = 0               # TO HOLD DURATION OF THE AIMING FRAME
         self.is_gun_triggered = False       # TO DISABLE MULTIPLE SHOOTING
 
+        self.SPEED = 1.7
         self.health = 100
         self.state = "idle"
         self.direction = "Right"
 
         self.fire_cooldown = 0.3
-
         self.hit_animation_frame = 0
 
         # DELAY BETWEEN EACH TEXTURE FRAME
@@ -38,13 +44,6 @@ class Character(Fps, Collidable):
             "fire":         0.03,       # FIRING SPEED
             "reload":       0.17,       # RELOADING SPEED
         }
-
-        # OVERWRITTEN BY THE INSTANCE
-        self.weapon:            Weapon = None
-        self.entity:            Sprite = None
-        self.frame:             dict = {}
-        self.TEXTURE:           dict = {}
-        self.TOTAL_TEXTURES:    dict = {}
 
     def update_animation_no_repeat(self, after_animation: str):
         """
@@ -189,10 +188,10 @@ class Weapon(Collidable):
             bullet = bullet_data["bullet"]
 
             # ANIMATE MOVEMENT
-            if bullet_data["direction"] == "Right":
-                bullet.x += speed * Time.dt
-            else:
-                bullet.x -= speed * Time.dt
+            if bullet_data["direction"] == "Left":
+                speed *= -1
+
+            bullet.x += speed * Time.dt
 
             # BULLET DISTANCE FROM CHARACTER REACHED MAX
             if abs(bullet.x - self.entity.x) >= self.max_range:
@@ -205,7 +204,6 @@ class Weapon(Collidable):
                 if self.is_bullet_collided(entity, bullet_data["bullet"], bullet_index):
 
                     entity.state = "hit"
-
                     entity.hit(entity, entity_index)
                     break
 
@@ -216,6 +214,7 @@ class Player(Character):
     SHOTGUN_POWER = 25
     WEAPON_Y_POS = -2.1
     SHOTGUN_CAPACITY = 4    # MAGAZINE CAPACITY
+    VISIBLE_AREA = 13       # THE CAMERA FOV IN PIXELS
 
     def __init__(self, entity: Sprite, ui: Ui) -> None:
         super().__init__()
@@ -279,6 +278,9 @@ class Player(Character):
             total_ammo_mag=self.total_ammo_mag
         )
 
+        self.items = Item(self.ui)
+        self.enemy: Enemy = Enemy      # WITHOUT INVOKING THE CLASS
+
         # DETERMINE WHETHER ANIMATION LOOP ENDED
         self.is_animating = lambda: (
             self.frame.get(self.state) != 0
@@ -307,30 +309,18 @@ class Player(Character):
                     self.state = "fire"
                     self.is_gun_triggered = True
 
-    def spawn_enemy(self):
+            case "o":
 
-        # MAKE SURE ALWAYS 4 ENEMIES IN THE WORLD
-        if len(self.entities) <= 4:
-            x = self.entity.world_position_getter().x + Randint(15, 29)
-            self.entities.append(
-                Enemy(
-                    Sprite(
-                        name="soldier",
-                        collider="box",
-                        scale=(2.7, 1.9),
-                        position=(x, -2.25),
-                        always_on_top=True,
-                    ),
-                    self.ui,
-                    self
-                )
-            )
+                self.state = "idle"
+                self.items.open_chest_at(self.entity.position.x)
 
-        # DESPAWN ENEMIES LEFT THE SCREEN
-        for index, enemy in enumerate(self.entities.copy()):
-            if enemy.entity.name != "player":
-                if enemy.entity.world_position_getter().x <= self.entity.world_position_getter().x - 5:
-                    enemy.hit(enemy, index)
+    def generate_spwan_position(self, distance: int):
+        """
+            CALCULATES RANDOM X-AXIS PIXEL OFF-SCREEN
+        """
+
+        pixel_off_screen = self.entity.world_position_getter().x + self.VISIBLE_AREA
+        return pixel_off_screen + Randint(1, distance)
 
     def update(self):
         """
@@ -339,7 +329,9 @@ class Player(Character):
 
         self.weapon.direction = self.direction
         self.weapon.animate_bullet()
-        self.spawn_enemy()
+        self.enemy.spawn(self, self.generate_spwan_position(50))
+        self.items.spawn_chest(self.generate_spwan_position(20))
+        self.items.update()
 
         match self.state:
 
@@ -405,7 +397,7 @@ class Player(Character):
 
 class Enemy(Character):
 
-    def __init__(self, entity: Sprite, ui: Ui, player: Player) -> None:
+    def __init__(self, entity: Sprite, ui: Ui, player) -> None:
         super().__init__()
 
         self.FOV = 3.5         # FIELD OF VIEW
@@ -442,19 +434,19 @@ class Enemy(Character):
 
         self.TEXTURE = {
             "Right": {
-                "idle":       {i: LoadTexture(f"Assets/Animation/Soldier/Idle/Right/{i}.png") for i in range(self.TOTAL_TEXTURES.get("idle"))},
-                "walk":       {i: LoadTexture(f"Assets/Animation/Soldier/Walk/Right/{i}.png") for i in range(self.TOTAL_TEXTURES.get("walk"))},
+                "aim":        {0: LoadTexture(f"Assets/Animation/Soldier/Attack/Fire/Right/0.png")},
                 "hit":        {i: LoadTexture(f"Assets/Animation/Soldier/Hit/Right/{i}.png") for i in range(self.TOTAL_TEXTURES.get("hit"))},
                 "die":        {i: LoadTexture(f"Assets/Animation/Soldier/Die/Right/{i}.png") for i in range(self.TOTAL_TEXTURES.get("die"))},
-                "aim":        {0: LoadTexture(f"Assets/Animation/Soldier/Attack/Fire/Right/0.png")},
+                "idle":       {i: LoadTexture(f"Assets/Animation/Soldier/Idle/Right/{i}.png") for i in range(self.TOTAL_TEXTURES.get("idle"))},
+                "walk":       {i: LoadTexture(f"Assets/Animation/Soldier/Walk/Right/{i}.png") for i in range(self.TOTAL_TEXTURES.get("walk"))}
             },
 
             "Left": {
-                "idle":       {i: LoadTexture(f"Assets/Animation/Soldier/Idle/Left/{i}.png") for i in range(self.TOTAL_TEXTURES.get("idle"))},
-                "walk":       {i: LoadTexture(f"Assets/Animation/Soldier/Walk/Left/{i}.png") for i in range(self.TOTAL_TEXTURES.get("walk"))},
+                "aim":        {0: LoadTexture(f"Assets/Animation/Soldier/Attack/Fire/Left/0.png")},
                 "hit":        {i: LoadTexture(f"Assets/Animation/Soldier/Hit/Left/{i}.png") for i in range(self.TOTAL_TEXTURES.get("hit"))},
                 "die":        {i: LoadTexture(f"Assets/Animation/Soldier/Die/Left/{i}.png") for i in range(self.TOTAL_TEXTURES.get("die"))},
-                "aim":        {0: LoadTexture(f"Assets/Animation/Soldier/Attack/Fire/Left/0.png")},
+                "idle":       {i: LoadTexture(f"Assets/Animation/Soldier/Idle/Left/{i}.png") for i in range(self.TOTAL_TEXTURES.get("idle"))},
+                "walk":       {i: LoadTexture(f"Assets/Animation/Soldier/Walk/Left/{i}.png") for i in range(self.TOTAL_TEXTURES.get("walk"))}
             }
         }
 
@@ -478,9 +470,6 @@ class Enemy(Character):
         """
             CHECKS THE STATE OF THE ENEMY AND UPDATE THE ANIMATION
         """
-
-        self.weapon.direction = self.direction
-        self.weapon.animate_bullet()
 
         match self.state:
 
@@ -520,7 +509,6 @@ class Enemy(Character):
         elif self.state == "walk":
 
             speed = self.SPEED * Time.dt
-
             if self.direction == "Left":
                 speed *= -1
 
@@ -537,16 +525,11 @@ class Enemy(Character):
         if abs(self.player.entity.position.x - self.entity.x) <= self.FOV:
 
             # LOOK AT THE PLAYER
-            if self.entity.position.x > self.player.entity.position.x:
-                self.direction = "Left"
-            else:
-                self.direction = "Right"
-
             self.state = "idle"
+            self.direction = "Left" if self.entity.position.x > self.player.entity.position.x else "Right"
             self.is_player_detected = True
 
         else:
-            self.alert_sound.play()
             self.is_player_detected = False
 
     def hit(self, entity, entity_index, despawn=False):
@@ -560,3 +543,27 @@ class Enemy(Character):
         else:
 
             self.health -= self.player.SHOTGUN_POWER
+
+    def spawn(self, pos):
+
+        # MAKE SURE ALWAYS 3 ENEMIES IN THE WORLD
+        if len(self.entities) <= 3:
+            self.entities.append(
+                Enemy(
+                    Sprite(
+                        name="soldier",
+                        collider="box",
+                        scale=(2.7, 1.9),
+                        position=(pos, -2.25),
+                        always_on_top=True,
+                    ),
+                    self.ui,
+                    self
+                )
+            )
+
+        # DESPAWN ENEMIES LEFT THE SCREEN
+        for index, enemy in enumerate(self.entities.copy()):
+            if enemy.entity.name != "player":
+                if enemy.entity.world_position_getter().x <= self.entity.world_position_getter().x - 5:
+                    enemy.hit(enemy, index)

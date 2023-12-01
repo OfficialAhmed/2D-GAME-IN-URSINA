@@ -44,7 +44,7 @@ class PauseMenu:
         self.is_enabled = True
         self.unpause_game = True
         cam_pos = Camera.position
-        
+
         self.menu = Sprite(
             texture=self.texture(self._current_option),
             scale=3,
@@ -113,16 +113,20 @@ class Ui:
             always_on_top=True
         )
 
-    def _render_text(self, text, x, y) -> Text:
-
+    def _render_text(self, text, x, y, scale=1) -> Text:
+        
         return Text(
             text=text,
+            scale=scale,
             font="Assets/Font/CUPHEAD.ttf",
             origin=(0, 0),
             position=(x, y),
             color=Color.white,
             always_on_top=True
         )
+
+    def render_popup(self, text, x, y, scale) -> Text:
+        return self._render_text(text, x, y, scale)
 
     def update_ui_pos(self, speed):
         self.frame.position += (speed, 0, 0)

@@ -2,19 +2,17 @@ from ursina import time as Time
 from ursina import Ursina, Sprite, Audio
 from ursina import destroy as Destroy
 
-from Scripts.World import Scene, Collidable
-from Scripts.Characters import Player
 from Scripts.Interface import Ui
+from Scripts.Characters import Player
+from Scripts.World import Scene, Collidable
 
 from random import randint as Randint
 
-
 app = Ursina()
 
-atmosphere = Audio("Assets/Sound/atmosphere.mp3", loop=True, autoplay=False)
-soundtrack = Audio("Assets/Sound/soundtrack.mp3", loop=True, autoplay=False)
-atmosphere.volume = 0.9
-soundtrack.volume = 0.0
+atmosphere = Audio("Assets/Sound/atmosphere.mp3", loop=True)
+soundtrack = Audio("Assets/Sound/soundtrack.mp3", loop=True)
+soundtrack.volume = 0.9
 
 ambient_sound = [
     Audio(f"Assets/Sound/Zombie/00.mp3", False),
@@ -41,6 +39,7 @@ game_loop = True
 colliders = Collidable()
 colliders.entities.append(player)
 
+
 ###############################################
 #       ENGINE AUTO INVOKED METHODS
 ###############################################
@@ -62,8 +61,13 @@ def update():
 
         # DESTROY FLAGGED ENTITIES IF AVAILABLE
         if colliders.flagged_delete:
+
             for collider in colliders.flagged_delete:
-                Destroy(collider.entity)
+
+                if isinstance(collider, Sprite):
+                    Destroy(collider)           # RESOURCES
+                else:
+                    Destroy(collider.entity)    # ENEMY / PLAYER
 
             colliders.flagged_delete.clear()
 
