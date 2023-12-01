@@ -35,6 +35,9 @@ _Ensure that you have Python and the necessary dependencies installed._
 - Space bar  :   Fire.
 - O          :   Interact with items
 
+# Preview
+![SAMPLE PREVIEW](sample.gif)
+
 
 # Contributing
 Contributions are welcome! If you have ideas for improvements, new features, or find any issues, feel free to open an issue or submit a pull request.
