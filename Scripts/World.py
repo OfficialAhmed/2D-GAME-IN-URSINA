@@ -52,13 +52,14 @@ class Scene:
     ANIMATION_SPEED = 1.8
 
     def __init__(self, Sprite: Sprite) -> None:
+
         self.sky = Sprite(
             "Assets/Animation/Stage/sky.png",
             scale=3.5,
             position=(-1, 0)
         )
 
-        self.moon = Sprite(
+        self.moon: Sprite = Sprite(
             "Assets/Animation/Stage/moon.png",
             scale=2.5,
             position=(-3.5, 2),
@@ -75,7 +76,7 @@ class Scene:
         self.clouds = Sprite(
             "Assets/Animation/Stage/clouds.png",
             scale=2,
-            position=(6, -0.7),
+            position=(0, -0.7),
             always_on_top=True
         )
 
@@ -103,48 +104,40 @@ class Scene:
         self.ground = Sprite(
             "Assets/Animation/Stage/ground.png",
             scale=3,
-            position=(79.2, -2),
+            position=(79, -2),
             always_on_top=True
         )
 
-        self.animation_direction = "right"
+        self.last_pos = 0
 
-        self.animation_delay = {
-            "trees":         5,
-            "mountains":     10,
-            "far_mountains": 15,
-            "clouds":        20,
-            "far_clouds":    25,
-            "sky":           33,
-        }
-
-    def update(self):
+    def update(self, player_pos):
         """
             UPDATES THE POSITION OF THE BACKGROUND
         """
 
         speed = self.ANIMATION_SPEED * Time.dt
 
-        # DIRECTION BASED ON THE WIDTH OF THE BACKGROUND "sky"
-        if self.sky.x <= -3.5:
-            self.animation_direction = "left"
-        elif self.sky.x >= 3.5:
-            self.animation_direction = "right"
+        if player_pos <= self.last_pos:     # PLAYER IDLE
+            self.clouds.x += 0.06*speed
+            self.far_clouds.x += 0.05*speed
 
-        self.trees.x -= speed / self.animation_delay.get("trees")
-        self.mountains.x -= speed / self.animation_delay.get("mountains")
-        self.far_mountains.x -= speed / \
-            self.animation_delay.get("far_mountains")
+        else:                               # PLAYER MOVING LEFT
+            speed *= 0.9                    # MATCH PLAYER SPEED
+            self.clouds.x += speed
+            self.mountains.x += speed
+            self.far_clouds.x += speed
+            self.far_mountains.x += speed
 
-        # UPDATE POSITIONS BASED ON THE DIRECTION
-        # MOVE BACKGROUND TOWARDS THE LEFT
-        if self.animation_direction == "right":
-            self.sky.x -= speed / self.animation_delay.get("sky")
-            self.far_clouds.x -= speed / self.animation_delay.get("far_clouds")
-            self.clouds.x -= speed / self.animation_delay.get("clouds")
+        # EVERY 5 UNITS GOING LEFT, RESET TEXTURE TO PLAYER POSITION
+        if self.far_clouds.x - player_pos >= 5:
+            self.trees.x = player_pos
+            self.clouds.x = player_pos
+            self.mountains.x = player_pos
+            self.far_clouds.x = player_pos
+            self.far_mountains.x = player_pos
 
-        # MOVE BACKGROUND TOWARDS THE RIGHT
-        else:
-            self.sky.x += speed / self.animation_delay.get("sky")
-            self.far_clouds.x += speed / self.animation_delay.get("far_clouds")
-            self.clouds.x += speed / self.animation_delay.get("clouds")
+        # FIXED POSITION
+        self.moon.x = player_pos - 3
+        self.sky.x = player_pos - 3
+
+        self.last_pos = player_pos
