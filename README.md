@@ -14,7 +14,7 @@ git clone https://github.com/OfficialAhmed/2D-Gun-Glee.git
 
 - Navigate to the project directory:
 ```bash
-cd 2d-Gun-Glee
+cd 2D-GAME-IN-URSINA
 ```
 
 - Install the required dependencies:
@@ -31,8 +31,12 @@ _Ensure that you have Python and the necessary dependencies installed._
 
 # Controls
 
-- Arrow keys: Move the player.
-- Space bar: Fire.
+- Arrow keys :   Move the player.
+- Space bar  :   Fire.
+- O          :   Interact with items
+
+# Preview
+![SAMPLE PREVIEW](sample.gif)
 
 
 # Contributing
