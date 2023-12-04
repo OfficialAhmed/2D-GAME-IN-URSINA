@@ -1,5 +1,6 @@
 # 2D Platformer Game with Ursina Engine
-Welcome to the 2D Platformer Game Repository built using the [Ursina Python Engine](https://www.ursinaengine.org/index.html)! This project is an experimental game that combines the classic platformer elements.
+Welcome to the 2D Platformer Game Repository built using the [Ursina Python Engine](https://www.ursinaengine.org)! This project is an experimental game that combines the classic platformer elements.
+
 
 # Features
 * Random Enemy Spawning: Unpredictable challenges with soldiers and zombies spawning at random locations.
