@@ -53,68 +53,103 @@ class Scene:
 
     def __init__(self, Sprite: Sprite) -> None:
 
-        self.sky = Sprite(
-            "Assets/Animation/Stage/sky.png",
-            scale=3.5,
-            position=(-1, 0)
+        assets = "Assets/Animation/Stage/"
+
+        self.sky_on_screen = Sprite(
+            f"{assets}Sky/0.png",
+            scale=2,
+            position=(0, 1.8)
+        )
+
+        self.sky_off_screen = Sprite(
+            f"{assets}Sky/0.png",
+            scale=2,
+            position=(-22, 1.8)
         )
 
         self.moon: Sprite = Sprite(
-            "Assets/Animation/Stage/moon.png",
+            f"{assets}moon.png",
             scale=2.5,
-            position=(-3.5, 2),
+            position=(-3.2, 2),
             always_on_top=True
         )
 
-        self.far_clouds = Sprite(
-            "Assets/Animation/Stage/far_clouds.png",
+        self.far_clouds_on_screen = Sprite(
+            f"{assets}Clouds/Far/0.png",
             scale=2,
             position=(0, 0),
             always_on_top=True
         )
 
-        self.clouds = Sprite(
-            "Assets/Animation/Stage/clouds.png",
+        self.far_clouds_off_screen = Sprite(
+            f"{assets}Clouds/Far/0.png",
+            scale=2,
+            position=(-22, 0),
+            always_on_top=True
+        )
+
+        self.clouds_on_screen = Sprite(
+            f"{assets}Clouds/0.png",
             scale=2,
             position=(0, -0.7),
             always_on_top=True
         )
 
-        self.far_mountains = Sprite(
-            "Assets/Animation/Stage/far_mountains.png",
+        self.clouds_off_screen = Sprite(
+            f"{assets}Clouds/0.png",
             scale=2,
-            position=(-1, -1),
+            position=(-22, -0.7),
             always_on_top=True
         )
 
-        self.mountains = Sprite(
-            "Assets/Animation/Stage/mountains.png",
-            scale=2,
-            position=(9, -1),
-            always_on_top=True
-        )
-
-        self.tree_on_screen = Sprite(
-            "Assets/Animation/Stage/Trees/0.png",
+        self.far_mountains_on_screen = Sprite(
+            f"{assets}Mountains/Far/0.png",
             scale=2,
             position=(0, -1.3),
             always_on_top=True
         )
-        self.tree_off_screen = Sprite(
-            f"Assets/Animation/Stage/Trees/1.png",
+
+        self.far_mountains_off_screen = Sprite(
+            f"{assets}Mountains/Far/0.png",
             scale=2,
             position=(-22, -1.3),
             always_on_top=True
         )
 
+        self.mountains_on_screen = Sprite(
+            f"{assets}Mountains/0.png",
+            scale=2,
+            position=(0, -1),
+            always_on_top=True
+        )
+
+        self.mountains_off_screen = Sprite(
+            f"{assets}Mountains/0.png",
+            scale=2,
+            position=(-22, -1),
+            always_on_top=True
+        )
+
+        self.tree_on_screen = Sprite(
+            f"{assets}Trees/0.png",
+            scale=2,
+            position=(0, -1.6),
+            always_on_top=True
+        )
+
+        self.tree_off_screen = Sprite(
+            f"{assets}Trees/1.png",
+            scale=2,
+            position=(-22, -1.6),
+            always_on_top=True
+        )
+
         self.ground = Sprite(
-            "Assets/Animation/Stage/ground.png",
+            f"{assets}ground.png",
             scale=3,
             position=(79, -2),
             always_on_top=True
         )
-
-        self.last_pos = 0
 
     def loading_zone(self, player_pos):
         """
@@ -123,39 +158,32 @@ class Scene:
 
         return player_pos >= self.tree_on_screen.x + 3 and player_pos <= self.tree_on_screen.x + 4
 
+    def swap_texture(self):
+        """
+            WHAT'S OFF-SCREEN BECOMES ON-SCREEN AND VICE VERSA
+        """
+
+        self.sky_off_screen.x = self.sky_on_screen.x + 22
+        self.tree_off_screen.x = self.tree_on_screen.x + 22
+        self.clouds_off_screen.x = self.clouds_on_screen.x + 22
+        self.mountains_off_screen.x = self.mountains_on_screen.x + 22
+        self.far_clouds_off_screen.x = self.far_clouds_on_screen.x + 22
+        self.far_mountains_off_screen.x = self.far_mountains_on_screen.x + 22
+
+        self.sky_on_screen, self.sky_off_screen = self.sky_off_screen, self.sky_on_screen
+        self.tree_on_screen, self.tree_off_screen = self.tree_off_screen, self.tree_on_screen
+        self.clouds_on_screen, self.clouds_off_screen = self.clouds_off_screen, self.clouds_on_screen
+        self.mountains_on_screen, self.mountains_off_screen = self.mountains_off_screen, self.mountains_on_screen
+        self.far_clouds_on_screen, self.far_clouds_off_screen = self.far_clouds_off_screen, self.far_clouds_on_screen
+        self.far_mountains_on_screen, self.far_mountains_off_screen = self.far_mountains_off_screen, self.far_mountains_on_screen
+
     def update(self, player_pos):
         """
-            UPDATES THE POSITION OF THE BACKGROUND
+            UPDATES BACKGROUND
         """
-
-        if self.loading_zone(player_pos):
-
-            # CHANGE TREE ON SCREEN
-            self.tree_off_screen.x = self.tree_on_screen.x + 22
-            self.tree_on_screen, self.tree_off_screen = self.tree_off_screen, self.tree_on_screen
-
-        speed = self.ANIMATION_SPEED * Time.dt
-
-        if player_pos <= self.last_pos:     # PLAYER IDLE
-            self.clouds.x += 0.06*speed
-            self.far_clouds.x += 0.05*speed
-
-        else:                               # PLAYER MOVING LEFT
-            speed *= 0.9                    # MATCH PLAYER SPEED
-            self.clouds.x += speed
-            self.mountains.x += speed
-            self.far_clouds.x += speed
-            self.far_mountains.x += speed
-
-        # EVERY 5 UNITS GOING LEFT, RESET TEXTURE TO PLAYER POSITION
-        if self.far_clouds.x - player_pos >= 5:
-            self.clouds.x = player_pos
-            self.mountains.x = player_pos
-            self.far_clouds.x = player_pos
-            self.far_mountains.x = player_pos
 
         # FIXED POSITION
         self.moon.x = player_pos - 3
-        self.sky.x = player_pos - 3
 
-        self.last_pos = player_pos
+        if self.loading_zone(player_pos):
+            self.swap_texture()
