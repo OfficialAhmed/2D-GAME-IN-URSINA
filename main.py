@@ -1,5 +1,5 @@
 from ursina import time as Time
-from ursina import Ursina, Sprite, Audio
+from ursina import Ursina, Sprite, Audio, EditorCamera
 from ursina import destroy as Destroy
 
 from Scripts.Interface import Ui
@@ -35,9 +35,9 @@ player = Player(
 
 
 game_loop = True
-
 colliders = Collidable()
 colliders.entities.append(player)
+editor_camera = EditorCamera(enabled=False, ignore_paused=True)
 
 
 ###############################################
@@ -54,6 +54,8 @@ def update():
         for obj in colliders.entities:
             obj.elapsed_frames += Time.dt
             obj.update()
+
+        scene.update(player.entity.get_position().x)
 
         # EVERY 20 UNITS TRAVELED GENERATE RANDOM ZOMBIE SOUND
         if player.entity.world_position_getter().x % 20 <= 0.1:
@@ -88,6 +90,9 @@ def input(key):
         else:           # UNPAUSE GAME
             game_loop = True
             ui.pause_menu.destroy()
+
+    elif key == "tab":
+        editor_camera.enabled = not editor_camera.enabled
 
     # _____ CHANGE CONTROLLER
     if game_loop:       # GAME CONTROLLER ENABLED
