@@ -94,10 +94,16 @@ class Scene:
             always_on_top=True
         )
 
-        self.trees = Sprite(
-            "Assets/Animation/Stage/trees.png",
+        self.tree_on_screen = Sprite(
+            "Assets/Animation/Stage/Trees/0.png",
             scale=2,
-            position=(25, -1.3),
+            position=(0, -1.3),
+            always_on_top=True
+        )
+        self.tree_off_screen = Sprite(
+            f"Assets/Animation/Stage/Trees/1.png",
+            scale=2,
+            position=(-22, -1.3),
             always_on_top=True
         )
 
@@ -110,10 +116,23 @@ class Scene:
 
         self.last_pos = 0
 
+    def loading_zone(self, player_pos):
+        """
+            DETERMINE RENDERING ZONE FOR CURRENT TEXTURE: IF PLAYER CLOSER TO THE END OF THE TEXTURE
+        """
+
+        return player_pos >= self.tree_on_screen.x + 3 and player_pos <= self.tree_on_screen.x + 4
+
     def update(self, player_pos):
         """
             UPDATES THE POSITION OF THE BACKGROUND
         """
+
+        if self.loading_zone(player_pos):
+
+            # CHANGE TREE ON SCREEN
+            self.tree_off_screen.x = self.tree_on_screen.x + 22
+            self.tree_on_screen, self.tree_off_screen = self.tree_off_screen, self.tree_on_screen
 
         speed = self.ANIMATION_SPEED * Time.dt
 
@@ -130,7 +149,6 @@ class Scene:
 
         # EVERY 5 UNITS GOING LEFT, RESET TEXTURE TO PLAYER POSITION
         if self.far_clouds.x - player_pos >= 5:
-            self.trees.x = player_pos
             self.clouds.x = player_pos
             self.mountains.x = player_pos
             self.far_clouds.x = player_pos
