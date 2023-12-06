@@ -6,6 +6,7 @@
 
 from ursina import Sprite
 from ursina import camera as Camera
+from ursina import time as Time
 
 
 class Fps:
@@ -36,105 +37,122 @@ class Screen:
 
 class Scene:
 
-    def __init__(self, Sprite: Sprite) -> None:
+    def __init__(self, sprite: Sprite) -> None:
 
         assets = "Assets/Animation/Stage/"
 
-        self.sky_on_screen = Sprite(
+        self.sky_on_screen = sprite(
             f"{assets}Sky/0.png",
             scale=2,
             position=(0, 1.8)
         )
 
-        self.sky_off_screen = Sprite(
+        self.sky_off_screen = sprite(
             f"{assets}Sky/0.png",
             scale=2,
             position=(-22, 1.8)
         )
 
-        self.moon: Sprite = Sprite(
+        self.moon = sprite(
             f"{assets}moon.png",
             scale=2.5,
             position=(-3.2, 2),
             always_on_top=True
         )
 
-        self.far_clouds_on_screen = Sprite(
+        self.far_clouds_on_screen = sprite(
             f"{assets}Clouds/Far/0.png",
             scale=2,
             position=(0, 0),
             always_on_top=True
         )
 
-        self.far_clouds_off_screen = Sprite(
+        self.far_clouds_off_screen = sprite(
             f"{assets}Clouds/Far/0.png",
             scale=2,
             position=(-22, 0),
             always_on_top=True
         )
 
-        self.clouds_on_screen = Sprite(
+        self.clouds_on_screen = sprite(
             f"{assets}Clouds/0.png",
             scale=2,
             position=(0, -0.7),
             always_on_top=True
         )
 
-        self.clouds_off_screen = Sprite(
+        self.clouds_off_screen = sprite(
             f"{assets}Clouds/0.png",
             scale=2,
             position=(-22, -0.7),
             always_on_top=True
         )
 
-        self.far_mountains_on_screen = Sprite(
+        self.far_mountains_on_screen = sprite(
             f"{assets}Mountains/Far/0.png",
             scale=2,
             position=(0, -1.3),
             always_on_top=True
         )
 
-        self.far_mountains_off_screen = Sprite(
+        self.far_mountains_off_screen = sprite(
             f"{assets}Mountains/Far/0.png",
             scale=2,
             position=(-22, -1.3),
             always_on_top=True
         )
 
-        self.mountains_on_screen = Sprite(
+        self.mountains_on_screen = sprite(
             f"{assets}Mountains/0.png",
             scale=2,
             position=(0, -1),
             always_on_top=True
         )
 
-        self.mountains_off_screen = Sprite(
+        self.mountains_off_screen = sprite(
             f"{assets}Mountains/0.png",
             scale=2,
             position=(-22, -1),
             always_on_top=True
         )
 
-        self.tree_on_screen = Sprite(
+        self.tree_on_screen = sprite(
             f"{assets}Trees/0.png",
             scale=2,
             position=(0, -1.6),
             always_on_top=True
         )
 
-        self.tree_off_screen = Sprite(
+        self.tree_off_screen = sprite(
             f"{assets}Trees/1.png",
             scale=2,
             position=(-22, -1.6),
             always_on_top=True
         )
 
-        self.ground = Sprite(
-            f"{assets}ground.png",
+        self.ground: Sprite = sprite(
+            f"{assets}/Ground/texture.png",
             scale=3,
             position=(79, -2),
             always_on_top=True
         )
+
+        self.ground_mask: Sprite = sprite(
+            f"{assets}/Ground/mask.png",
+            scale=3,
+            position=(79, -4.43),
+            collider="box",
+        )
+
+    def is_on_ground(self, entity) -> bool:
+        return True if self.ground_mask.intersects(entity) else False
+
+    def apply_gravity(self, scene, entities):
+
+        for entity in entities:
+            if not scene.is_on_ground(entity.entity):
+                gravity = 0.9 * 2 * Time.dt
+                entity.entity.y -= gravity
 
     def loading_zone(self, player_pos):
         """

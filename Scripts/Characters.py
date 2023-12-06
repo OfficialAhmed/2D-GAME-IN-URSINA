@@ -285,6 +285,10 @@ class Player(Character):
 
         match key:
 
+            case Keys.up_arrow:
+                # TODO: ANIMATE JUMPING STATE
+                self.entity.y += 1.2
+
             case Keys.right_arrow:
                 self.state = "run"
                 self.direction = "Right"
@@ -544,7 +548,7 @@ class Enemy(Character):
                         name="soldier",
                         collider="box",
                         scale=(2.7, 1.9),
-                        position=(pos, -2.25),
+                        position=(pos, -2),
                         always_on_top=True,
                     ),
                     self

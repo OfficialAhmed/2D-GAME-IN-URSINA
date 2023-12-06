@@ -18,22 +18,22 @@ soundtrack = Audio("Assets/Sound/soundtrack.mp3", loop=True)
 soundtrack.volume = 0
 atmosphere.volume = 0
 
-ambient_sound = [
-    Audio(f"Assets/Sound/Zombie/00.mp3", False),
-    Audio(f"Assets/Sound/Zombie/01.mp3", False),
-    Audio(f"Assets/Sound/Zombie/02.mp3", False)
-]
+# ambient_sound = [
+#     Audio(f"Assets/Sound/Zombie/00.mp3", False),
+#     Audio(f"Assets/Sound/Zombie/01.mp3", False),
+#     Audio(f"Assets/Sound/Zombie/02.mp3", False)
+# ]
 
 shared = Shared()
+scene = Scene(sprite=Sprite)
+shared.set_scene(scene)
 shared.set_ui(Ui(sprite=Sprite))
-
-scene = Scene(Sprite=Sprite)
 player = Player(
     Sprite(
         name="player",
         collider="box",
         scale=(5, 2),
-        position=(0, -2.2),
+        position=(0, -1.5),
         always_on_top=True,
     )
 )
@@ -50,7 +50,7 @@ editor_camera = EditorCamera(enabled=False, ignore_paused=True)
 
 def update():
 
-    global ambient_sound
+    # global ambient_sound
 
     if game_loop:       # HANDLE GAME LOGIC (FPS)
 
@@ -59,10 +59,11 @@ def update():
             obj.update()
 
         scene.update(player.entity.get_position().x)
+        scene.apply_gravity(scene, shared.entities)
 
         # EVERY 20 UNITS TRAVELED GENERATE RANDOM ZOMBIE SOUND
-        if player.entity.world_position_getter().x % 20 <= 0.1:
-            ambient_sound[Randint(0, len(ambient_sound)-1)].play()
+        # if player.entity.world_position_getter().x % 20 <= 0.1:
+        #     ambient_sound[Randint(0, len(ambient_sound)-1)].play()
 
         # DESTROY FLAGGED ENTITIES IF AVAILABLE
         if shared.flagged_delete:

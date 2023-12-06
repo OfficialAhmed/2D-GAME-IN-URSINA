@@ -1,5 +1,4 @@
 from .World import Screen
-from .Interface import Ui
 
 
 class Shared(Screen):
@@ -7,7 +6,9 @@ class Shared(Screen):
         SHARABLE VARS. INIT ONCE ONLY
     """
 
-    ui: Ui = None
+    ui = None
+    scene = None
+
     entities = []           # ENTITIES CAN BE CHECKED FOR COLLISION
     flagged_delete = []     # ENTITIES TO BE DELETED
 
@@ -16,3 +17,6 @@ class Shared(Screen):
 
     def set_ui(self, ui):
         Shared.ui = ui
+
+    def set_scene(self, scene):
+        Shared.scene = scene
