@@ -1,5 +1,4 @@
 
-from .Interface import Ui
 from .World import Collidable
 
 from ursina import Sprite, Text

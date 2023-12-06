@@ -5,7 +5,6 @@
 """
 
 from ursina import Sprite
-from ursina import time as Time
 from ursina import camera as Camera
 
 
@@ -48,8 +47,6 @@ class Collidable(Screen):
 
 
 class Scene:
-
-    ANIMATION_SPEED = 1.8
 
     def __init__(self, Sprite: Sprite) -> None:
 
