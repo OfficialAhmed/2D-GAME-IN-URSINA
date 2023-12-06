@@ -34,18 +34,6 @@ class Screen:
         return pos_x >= frame_l <= frame_r
 
 
-class Collidable(Screen):
-    """
-        ENTITIES CAN BE COLLIDED WITH OTHER OBJECTS STORED HERE
-    """
-
-    entities = []           # ENTITIES CAN BE CHECKED FOR COLLISION
-    flagged_delete = []     # ENTITIES TO BE DELETED
-
-    def __init__(self) -> None:
-        super().__init__()
-
-
 class Scene:
 
     def __init__(self, Sprite: Sprite) -> None:

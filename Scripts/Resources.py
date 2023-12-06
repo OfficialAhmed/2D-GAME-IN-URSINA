@@ -1,5 +1,5 @@
 
-from .World import Collidable
+from .Common import Shared
 
 from ursina import Sprite, Text
 from ursina import time as Time
@@ -7,7 +7,7 @@ from ursina import destroy as Destroy
 from random import randint as Randint
 
 
-class Item(Collidable):
+class Item(Shared):
 
     CHEST_RENDER_LIMIT = 2
     POPUP_DURATION = 160

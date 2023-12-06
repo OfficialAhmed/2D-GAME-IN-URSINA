@@ -2,17 +2,21 @@ from ursina import time as Time
 from ursina import Ursina, Sprite, Audio, EditorCamera
 from ursina import destroy as Destroy
 
+from Scripts.World import Scene
+from Scripts.Common import Shared
 from Scripts.Interface import Ui
 from Scripts.Characters import Player
-from Scripts.World import Scene, Collidable
+
 
 from random import randint as Randint
+
 
 app = Ursina()
 
 atmosphere = Audio("Assets/Sound/atmosphere.mp3", loop=True)
 soundtrack = Audio("Assets/Sound/soundtrack.mp3", loop=True)
-soundtrack.volume = 0.9
+soundtrack.volume = 0
+atmosphere.volume = 0
 
 ambient_sound = [
     Audio(f"Assets/Sound/Zombie/00.mp3", False),
@@ -20,7 +24,9 @@ ambient_sound = [
     Audio(f"Assets/Sound/Zombie/02.mp3", False)
 ]
 
-ui = Ui(sprite=Sprite)
+shared = Shared()
+shared.set_ui(Ui(sprite=Sprite))
+
 scene = Scene(Sprite=Sprite)
 player = Player(
     Sprite(
@@ -29,14 +35,11 @@ player = Player(
         scale=(5, 2),
         position=(0, -2.2),
         always_on_top=True,
-    ),
-    ui
+    )
 )
-
+shared.entities.append(player)
 
 game_loop = True
-colliders = Collidable()
-colliders.entities.append(player)
 editor_camera = EditorCamera(enabled=False, ignore_paused=True)
 
 
@@ -51,7 +54,7 @@ def update():
 
     if game_loop:       # HANDLE GAME LOGIC (FPS)
 
-        for obj in colliders.entities:
+        for obj in shared.entities:
             obj.elapsed_frames += Time.dt
             obj.update()
 
@@ -62,16 +65,16 @@ def update():
             ambient_sound[Randint(0, len(ambient_sound)-1)].play()
 
         # DESTROY FLAGGED ENTITIES IF AVAILABLE
-        if colliders.flagged_delete:
+        if shared.flagged_delete:
 
-            for collider in colliders.flagged_delete:
+            for collider in shared.flagged_delete:
 
                 if isinstance(collider, Sprite):
                     Destroy(collider)           # RESOURCES
                 else:
                     Destroy(collider.entity)    # ENEMY / PLAYER
 
-            colliders.flagged_delete.clear()
+            shared.flagged_delete.clear()
 
 
 def input(key):
@@ -85,11 +88,11 @@ def input(key):
 
         if game_loop:   # PAUSE GAME
             game_loop = False
-            ui.pause_menu.render()
+            shared.ui.pause_menu.render()
 
         else:           # UNPAUSE GAME
             game_loop = True
-            ui.pause_menu.destroy()
+            shared.ui.pause_menu.destroy()
 
     elif key == "tab":
         editor_camera.enabled = not editor_camera.enabled
@@ -103,8 +106,8 @@ def input(key):
     else:               # GAME CONTROLLER DISABLED
 
         # HANDLE MENU CONTROLLERS
-        if ui.pause_menu.is_enabled:
-            game_loop = ui.pause_menu.controller(key)
+        if shared.ui.pause_menu.is_enabled:
+            game_loop = shared.ui.pause_menu.controller(key)
 
 
 app.run()
